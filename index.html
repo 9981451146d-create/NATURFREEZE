@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Naturfreeze Cancún | Productos congelados</title>
+    <meta name="description" content="Tienda de productos congelados Naturfreeze Cancún con carrito, entregas locales y pedidos por WhatsApp.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="Naturfreeze inicio">
+        <img src="assets/logo.svg" alt="Naturfreeze Cancún">
+      </a>
+      <nav class="nav-links" aria-label="Principal">
+        <a href="#productos">Productos</a>
+        <a href="#pagos">Pagos</a>
+        <a href="#entregas">Entregas</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <button class="cart-button" id="openCart" type="button" aria-label="Abrir carrito">
+        <span>Mis pedidos</span>
+        <strong id="cartCount">0</strong>
+      </button>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-copy">
+          <span class="eyebrow">Congelados premium en Cancún</span>
+          <h1>Frescura que preserva lo esencial.</h1>
+          <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atención directa por WhatsApp.</p>
+          <div class="hero-actions">
+            <a class="primary-action" href="#productos">Comprar ahora</a>
+            <a class="secondary-action" href="#pagos">Ver formas de pago</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Productos destacados Naturfreeze">
+          <div class="frost-card main-product">
+            <img src="assets/tilapia.jpg" alt="Filete de tilapia Naturfreeze">
+            <div>
+              <strong>Filete de tilapia</strong>
+              <span>1 kg | $110</span>
+            </div>
+          </div>
+          <div class="frost-card mini-product berries">
+            <img src="assets/mix-berries.jpg" alt="Mix de berries Naturfreeze">
+            <strong>Mix berries</strong>
+          </div>
+          <div class="frost-card mini-product chicken">
+            <img src="assets/pollo-picoso.jpg" alt="Tiras de pollo Naturfreeze">
+            <strong>Pollo picoso</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="trust-strip" aria-label="Beneficios">
+        <div><strong>-18 °C</strong><span>Conservación recomendada</span></div>
+        <div><strong>Cancún</strong><span>Entrega local confiable</span></div>
+        <div><strong>Premium</strong><span>Calidad seleccionada</span></div>
+        <div><strong>WhatsApp</strong><span>Atención personalizada</span></div>
+      </section>
+
+      <section class="section-head" id="productos">
+        <span class="eyebrow">Catálogo</span>
+        <h2>Productos congelados</h2>
+        <p>Busca un producto, agrégalo a mis pedidos y confirma dirección, envío y pago antes de mandarlo por WhatsApp.</p>
+      </section>
+
+      <section class="catalog-tools" aria-label="Buscar y filtrar productos">
+        <label class="search-box" for="productSearch">
+          <span>Buscar</span>
+          <input id="productSearch" type="search" placeholder="Ej. tilapia, mango, nuggets...">
+        </label>
+        <div class="filters">
+          <button class="filter active" type="button" data-filter="todos">Todos</button>
+          <button class="filter" type="button" data-filter="pescado">Pescado</button>
+          <button class="filter" type="button" data-filter="pollo">Pollo</button>
+          <button class="filter" type="button" data-filter="fruta">Fruta</button>
+          <button class="filter" type="button" data-filter="botana">Botanas</button>
+        </div>
+      </section>
+
+      <section class="product-grid" id="productGrid" aria-live="polite"></section>
+
+      <section class="payment-section" id="pagos">
+        <div class="section-head compact">
+          <span class="eyebrow">Formas de pago</span>
+          <h2>Compra fácil y confirma rápido</h2>
+        </div>
+        <div class="payment-grid">
+          <article class="payment-panel">
+            <h3>Transferencia</h3>
+            <dl>
+              <div><dt>CLABE</dt><dd>722969010584124963</dd></div>
+              <div><dt>Beneficiario</dt><dd>Edwin Natanael Cauich Duran</dd></div>
+            <div><dt>Institución</dt><dd>Mercado Pago W</dd></div>
+            </dl>
+            <p class="payment-note">Después de transferir, envía el comprobante al WhatsApp 998 350 0558 para confirmar tu pedido.</p>
+            <button class="copy-button" id="copyClabe" type="button">Copiar CLABE</button>
+          </article>
+          <article class="payment-panel accent-panel">
+            <h3>Tarjeta</h3>
+            <p>El espacio para tarjeta queda preparado. Para cobrar en línea se conecta Mercado Pago, Stripe o Clip con una cuenta segura.</p>
+            <button class="copy-button" id="cardInfo" type="button">Ver estado</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="delivery-section" id="entregas">
+        <div>
+          <span class="eyebrow">Entrega</span>
+          <h2>Servicio para hogares, hoteles y negocios</h2>
+          <p>El envío se calcula con un precio base y una estimación por distancia. En la versión final puedes ajustar tarifas por zona.</p>
+        </div>
+        <div class="delivery-card">
+          <strong id="deliveryPreview">$25</strong>
+          <span>Envío base estimado</span>
+        </div>
+      </section>
+
+      <section class="contact-section" id="contacto">
+        <div>
+          <span class="eyebrow">Contacto</span>
+          <h2>Listo para levantar pedido</h2>
+          <p>Escríbenos para disponibilidad, mayoreo o entregas especiales.</p>
+        </div>
+        <a class="whatsapp-action" href="https://wa.me/529983500558?text=Hola%20Naturfreeze%2C%20quiero%20informacion%20de%20productos%20congelados" target="_blank" rel="noreferrer">WhatsApp 998 350 0558</a>
+      </section>
+    </main>
+
+    <aside class="cart-drawer" id="cartDrawer" aria-hidden="true">
+      <div class="cart-panel" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+        <div class="cart-head">
+          <div>
+            <span class="eyebrow">Mis pedidos</span>
+            <h2 id="cartTitle">Resumen del pedido</h2>
+          </div>
+          <button class="icon-button" id="closeCart" type="button" aria-label="Cerrar carrito">x</button>
+        </div>
+
+        <div class="cart-items" id="cartItems"></div>
+
+        <div class="checkout-box">
+          <h3>Seleccionar dirección</h3>
+          <button class="location-button" id="useLocation" type="button">Usar ubicación actual</button>
+          <p class="field-help" id="locationStatus">También puedes llenar la dirección manualmente.</p>
+
+          <label for="customerName">Nombre</label>
+          <input id="customerName" type="text" placeholder="Tu nombre" autocomplete="name">
+
+          <label for="customerPhone">Teléfono</label>
+          <input id="customerPhone" type="tel" placeholder="998 000 0000" autocomplete="tel">
+
+          <label for="customerAddress">Dirección exacta</label>
+          <textarea id="customerAddress" rows="3" placeholder="Calle, número, colonia, referencia o enlace de ubicación"></textarea>
+
+          <label for="buildingType">Tipo de edificio</label>
+          <select id="buildingType" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Casa">Casa</option>
+            <option value="Departamento">Departamento</option>
+            <option value="Edificio">Edificio</option>
+            <option value="Hotel">Hotel</option>
+            <option value="Oficinas">Oficinas</option>
+            <option value="Negocio">Negocio</option>
+            <option value="Otro">Otro</option>
+          </select>
+
+          <label for="addressDetails">Especificaciones</label>
+          <textarea id="addressDetails" rows="2" placeholder="Piso, puerta, habitación, recepción, local, referencias, etc."></textarea>
+
+          <label for="paymentMethod">Pago</label>
+          <select id="paymentMethod">
+            <option value="Transferencia - enviaré comprobante por WhatsApp">Transferencia - enviaré comprobante por WhatsApp</option>
+            <option value="Efectivo al recibir">Efectivo al recibir</option>
+            <option value="Tarjeta pendiente de conectar">Tarjeta pendiente de conectar</option>
+          </select>
+        </div>
+
+        <div class="totals-box">
+          <div><span>Subtotal productos</span><strong id="cartSubtotal">$0</strong></div>
+          <div><span>Envío estimado</span><strong id="shippingTotal">$25</strong></div>
+          <div class="grand-total"><span>Total estimado</span><strong id="cartTotal">$0</strong></div>
+        </div>
+
+        <button class="primary-action full" id="sendOrder" type="button">Enviar pedido por WhatsApp</button>
+        <p class="cart-note">Si pagas por transferencia, envía tu comprobante al WhatsApp después de mandar el pedido.</p>
+      </div>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
