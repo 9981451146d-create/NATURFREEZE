@@ -8,12 +8,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <div class="welcome-screen" id="welcomeScreen" aria-live="polite">
+      <div class="welcome-card">
+        <span>Bienvenido/a</span>
+        <strong>¿List@ para ordenar?</strong>
+      </div>
+    </div>
+
     <header class="site-header">
-      <a class="brand" href="#inicio" aria-label="Naturfreeze inicio">
-        <img src="assets/logo.svg" alt="Naturfreeze Cancún">
+      <a class="brand sliding-logo" href="#inicio" aria-label="Naturfreeze inicio">
+        <img src="assets/logo-naturfreeze-mark.jpg" alt="Naturfreeze Cancún">
       </a>
       <nav class="nav-links" aria-label="Principal">
         <a href="#productos">Productos</a>
@@ -30,6 +38,7 @@
     <main>
       <section class="hero" id="inicio">
         <div class="hero-copy">
+          <img class="hero-logo" src="assets/logo-naturfreeze-cropped.jpg" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
           <span class="eyebrow">Congelados premium en Cancún</span>
           <h1>Frescura que preserva lo esencial.</h1>
           <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atención directa por WhatsApp.</p>
@@ -102,11 +111,6 @@
             <p class="payment-note">Después de transferir, envía el comprobante al WhatsApp 998 350 0558 para confirmar tu pedido.</p>
             <button class="copy-button" id="copyClabe" type="button">Copiar CLABE</button>
           </article>
-          <article class="payment-panel accent-panel">
-            <h3>Tarjeta</h3>
-            <p>El espacio para tarjeta queda preparado. Para cobrar en línea se conecta Mercado Pago, Stripe o Clip con una cuenta segura.</p>
-            <button class="copy-button" id="cardInfo" type="button">Ver estado</button>
-          </article>
         </div>
       </section>
 
@@ -114,10 +118,10 @@
         <div>
           <span class="eyebrow">Entrega</span>
           <h2>Servicio para hogares, hoteles y negocios</h2>
-          <p>El envío se calcula con un precio base y una estimación por distancia. En la versión final puedes ajustar tarifas por zona.</p>
+          <p>El envío se calcula a partir de los kilómetros por recorrer desde nuestro punto de partida.</p>
         </div>
         <div class="delivery-card">
-          <strong id="deliveryPreview">$25</strong>
+          <strong id="deliveryPreview">Según distancia</strong>
           <span>Envío base estimado</span>
         </div>
       </section>
@@ -146,17 +150,40 @@
 
         <div class="checkout-box">
           <h3>Seleccionar dirección</h3>
-          <button class="location-button" id="useLocation" type="button">Usar ubicación actual</button>
-          <p class="field-help" id="locationStatus">También puedes llenar la dirección manualmente.</p>
-
           <label for="customerName">Nombre</label>
           <input id="customerName" type="text" placeholder="Tu nombre" autocomplete="name">
 
           <label for="customerPhone">Teléfono</label>
-          <input id="customerPhone" type="tel" placeholder="998 000 0000" autocomplete="tel">
+          <input id="customerPhone" type="tel" placeholder="10 dígitos" autocomplete="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}">
+
+          <label for="deliveryMode">¿Quién recibe?</label>
+          <select id="deliveryMode">
+            <option value="Yo recibo el pedido">Yo recibo el pedido</option>
+            <option value="Otra persona">Enviar a otra persona</option>
+          </select>
+
+          <div class="other-person-fields" id="otherPersonFields" hidden>
+            <label for="recipientName">Nombre de quien recibe</label>
+            <input id="recipientName" type="text" placeholder="Nombre de la persona">
+
+            <label for="recipientPhone">Teléfono de quien recibe</label>
+            <input id="recipientPhone" type="tel" placeholder="10 dígitos" inputmode="numeric" maxlength="10" pattern="[0-9]{10}">
+
+          </div>
+
+          <button class="location-button" id="useLocation" type="button">Usar ubicación actual</button>
+          <p class="field-help" id="locationStatus">Usa tu ubicación actual para calcular el envío.</p>
+
+          <div class="map-picker" id="mapPicker" hidden>
+            <div class="map-picker-head">
+              <strong>Elegir ubicación en el mapa</strong>
+              <span>Toca el punto exacto de entrega</span>
+            </div>
+            <div class="delivery-map" id="deliveryMap" aria-label="Mapa para seleccionar ubicación de entrega"></div>
+          </div>
 
           <label for="customerAddress">Dirección exacta</label>
-          <textarea id="customerAddress" rows="3" placeholder="Calle, número, colonia, referencia o enlace de ubicación"></textarea>
+          <textarea id="customerAddress" rows="3" placeholder="Calle, número, colonia, referencia o enlace de ubicación de Google Maps"></textarea>
 
           <label for="buildingType">Tipo de edificio</label>
           <select id="buildingType" required>
@@ -173,11 +200,43 @@
           <label for="addressDetails">Especificaciones</label>
           <textarea id="addressDetails" rows="2" placeholder="Piso, puerta, habitación, recepción, local, referencias, etc."></textarea>
 
+          <label for="advanceProduct">Anticipo de producto</label>
+          <select id="advanceProduct">
+            <option value="No">No</option>
+            <option value="Sí">Sí</option>
+          </select>
+
+          <div class="conditional-fields" id="advanceFields" hidden>
+            <label for="advanceDate">Día del anticipo</label>
+            <input id="advanceDate" type="date">
+
+            <label for="advanceTime">Horario del anticipo</label>
+            <input id="advanceTime" type="time" min="12:00" max="18:00" step="900">
+            <p class="field-help">El horario del anticipo debe estar entre 12:00 y 18:00.</p>
+          </div>
+
+          <label for="deliverySchedule">Horario de entrega</label>
+          <select id="deliverySchedule">
+            <option value="">Selecciona un horario</option>
+            <option value="12:00 - 13:00">12:00 - 13:00</option>
+            <option value="13:00 - 14:00">13:00 - 14:00</option>
+            <option value="14:00 - 15:00">14:00 - 15:00</option>
+            <option value="15:00 - 16:00">15:00 - 16:00</option>
+            <option value="16:00 - 17:00">16:00 - 17:00</option>
+            <option value="17:00 - 18:00">17:00 - 18:00</option>
+            <option value="Personalizado">Personalizado</option>
+          </select>
+
+          <div class="conditional-fields" id="customDeliveryFields" hidden>
+            <label for="customDeliveryTime">Horario personalizado</label>
+            <input id="customDeliveryTime" type="time" min="12:00" max="18:00" step="900">
+            <p class="field-help">El horario personalizado debe estar entre 12:00 y 18:00.</p>
+          </div>
+
           <label for="paymentMethod">Pago</label>
           <select id="paymentMethod">
             <option value="Transferencia - enviaré comprobante por WhatsApp">Transferencia - enviaré comprobante por WhatsApp</option>
             <option value="Efectivo al recibir">Efectivo al recibir</option>
-            <option value="Tarjeta pendiente de conectar">Tarjeta pendiente de conectar</option>
           </select>
         </div>
 
@@ -193,6 +252,7 @@
     </aside>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

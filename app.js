@@ -1,7 +1,8 @@
 const WHATSAPP_NUMBER = "529983500558";
-const STORE_LOCATION = { lat: 21.1619, lng: -86.8515 };
+const STORE_LOCATION = { lat: 21.173461, lng: -86.915554 };
 const BASE_SHIPPING = 25;
-const PRICE_PER_KM = 8;
+const INCLUDED_KM = 3;
+const PRICE_PER_EXTRA_KM = 10;
 
 const products = [
   {
@@ -60,7 +61,7 @@ const products = [
   },
   {
     id: "nuggets",
-    name: "Nuggets de pollo dinosaurio",
+    name: "Nugget de pollo con forma de dinosaurio",
     category: "pollo",
     presentation: "1 kilo",
     price: 126,
@@ -110,6 +111,7 @@ let activeFilter = "todos";
 let activeSearch = "";
 let shipping = BASE_SHIPPING;
 let customerCoords = null;
+let customerAccuracy = null;
 
 const productGrid = document.querySelector("#productGrid");
 const cartDrawer = document.querySelector("#cartDrawer");
@@ -120,6 +122,21 @@ const shippingTotal = document.querySelector("#shippingTotal");
 const cartTotal = document.querySelector("#cartTotal");
 const deliveryPreview = document.querySelector("#deliveryPreview");
 const toast = document.querySelector("#toast");
+const deliveryMode = document.querySelector("#deliveryMode");
+const otherPersonFields = document.querySelector("#otherPersonFields");
+const mapPicker = document.querySelector("#mapPicker");
+const deliveryMapElement = document.querySelector("#deliveryMap");
+const deliverySchedule = document.querySelector("#deliverySchedule");
+const customDeliveryFields = document.querySelector("#customDeliveryFields");
+const customDeliveryTime = document.querySelector("#customDeliveryTime");
+const advanceProduct = document.querySelector("#advanceProduct");
+const advanceFields = document.querySelector("#advanceFields");
+const advanceDate = document.querySelector("#advanceDate");
+const advanceTime = document.querySelector("#advanceTime");
+
+let deliveryMap = null;
+let deliveryMarker = null;
+let storeMarker = null;
 
 function money(value) {
   return new Intl.NumberFormat("es-MX", {
@@ -137,6 +154,49 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
   window.setTimeout(() => toast.classList.remove("show"), 2800);
+}
+
+function onlyDigits(value) {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
+function isTenDigitPhone(value) {
+  return /^\d{10}$/.test(value);
+}
+
+function formatCoord(value) {
+  return Number(value).toFixed(6);
+}
+
+function cleanAddressForMessage(address) {
+  return address
+    .split("\n")
+    .filter((line) => !line.includes("google.com/maps"))
+    .join("\n")
+    .replace(/Ubicación actual:\s*/i, "")
+    .replace(/Ubicación seleccionada:\s*/i, "")
+    .trim() || "Sin dirección escrita";
+}
+
+function getPreciseLocationLine() {
+  if (!customerCoords) return "*Ubicación exacta:* no enviada";
+
+  const lat = formatCoord(customerCoords.lat);
+  const lng = formatCoord(customerCoords.lng);
+  const accuracy = customerAccuracy ? ` | *Precisión aprox.:* ±${Math.round(customerAccuracy)} m` : "";
+  return `*Ubicación exacta:* https://www.google.com/maps?q=${lat},${lng} | *Coordenadas:* ${lat}, ${lng}${accuracy}`;
+}
+
+function isTimeInDeliveryRange(value) {
+  return value >= "12:00" && value <= "18:00";
+}
+
+function getDeliveryScheduleText() {
+  if (deliverySchedule.value === "Personalizado") {
+    return customDeliveryTime.value ? `Personalizado - ${customDeliveryTime.value}` : "";
+  }
+
+  return deliverySchedule.value;
 }
 
 function getFilteredProducts() {
@@ -206,7 +266,7 @@ function renderCart() {
   cartSubtotal.textContent = money(subtotal);
   shippingTotal.textContent = rows.length ? money(shipping) : money(0);
   cartTotal.textContent = money(total);
-  deliveryPreview.textContent = money(shipping);
+  deliveryPreview.textContent = "Según distancia";
 
   if (!rows.length) {
     cartItems.innerHTML = "<p class=\"cart-note\">Tu pedido está vacío.</p>";
@@ -251,6 +311,7 @@ function changeQuantity(id, amount) {
 function openCart() {
   cartDrawer.classList.add("open");
   cartDrawer.setAttribute("aria-hidden", "false");
+  if (deliveryMode.value === "Otra persona") initDeliveryMap();
 }
 
 function closeCart() {
@@ -270,16 +331,104 @@ function distanceKm(from, to) {
 
 function updateShippingFromCoords(coords) {
   customerCoords = coords;
+  customerAccuracy = coords.accuracy || null;
   const kilometers = distanceKm(STORE_LOCATION, coords);
-  shipping = Math.max(BASE_SHIPPING, Math.ceil(BASE_SHIPPING + kilometers * PRICE_PER_KM));
+  const extraKm = Math.max(0, Math.ceil(kilometers) - INCLUDED_KM);
+  shipping = BASE_SHIPPING + extraKm * PRICE_PER_EXTRA_KM;
   renderCart();
   return kilometers;
 }
 
-async function tryReverseGeocode(coords) {
+function extractCoords(text) {
+  const atMatch = text.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const qMatch = text.match(/[?&]q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const plainMatch = text.match(/(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/);
+  const match = atMatch || qMatch || plainMatch;
+
+  if (!match) return null;
+
+  return {
+    lat: Number(match[1]),
+    lng: Number(match[2])
+  };
+}
+
+function updateShippingFromAddressText() {
+  const address = document.querySelector("#customerAddress").value;
+  const coords = extractCoords(address);
+  if (!coords) return;
+
+  const kilometers = updateShippingFromCoords(coords);
+  setDeliveryMarker(coords);
+  document.querySelector("#locationStatus").textContent = `Ubicación detectada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
+}
+
+function initDeliveryMap() {
+  if (!deliveryMapElement || typeof L === "undefined") {
+    if (deliveryMapElement) {
+      deliveryMapElement.innerHTML = "<p>El mapa no pudo cargar. Puedes escribir la dirección o pegar un enlace de ubicación.</p>";
+    }
+    return;
+  }
+
+  if (deliveryMap) {
+    window.setTimeout(() => deliveryMap.invalidateSize(), 120);
+    return;
+  }
+
+  deliveryMap = L.map(deliveryMapElement, {
+    zoomControl: true,
+    scrollWheelZoom: false
+  }).setView([STORE_LOCATION.lat, STORE_LOCATION.lng], 13);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(deliveryMap);
+
+  storeMarker = L.marker([STORE_LOCATION.lat, STORE_LOCATION.lng]).addTo(deliveryMap);
+  storeMarker.bindPopup("Punto de partida / CEDIS");
+
+  deliveryMap.on("click", (event) => {
+    selectDeliveryCoords({
+      lat: event.latlng.lat,
+      lng: event.latlng.lng
+    });
+  });
+
+  window.setTimeout(() => deliveryMap.invalidateSize(), 120);
+}
+
+function setDeliveryMarker(coords) {
+  if (!deliveryMap || typeof L === "undefined") return;
+
+  const position = [coords.lat, coords.lng];
+
+  if (!deliveryMarker) {
+    deliveryMarker = L.marker(position, { draggable: true }).addTo(deliveryMap);
+    deliveryMarker.on("dragend", () => {
+      const position = deliveryMarker.getLatLng();
+      selectDeliveryCoords({ lat: position.lat, lng: position.lng });
+    });
+  } else {
+    deliveryMarker.setLatLng(position);
+  }
+
+  deliveryMarker.bindPopup("Ubicación de entrega").openPopup();
+}
+
+async function selectDeliveryCoords(coords) {
+  const kilometers = updateShippingFromCoords(coords);
+  setDeliveryMarker(coords);
+  deliveryMap.setView([coords.lat, coords.lng], Math.max(deliveryMap.getZoom(), 15));
+  await tryReverseGeocode(coords, "Ubicación seleccionada");
+  document.querySelector("#locationStatus").textContent = `Ubicación seleccionada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
+}
+
+async function tryReverseGeocode(coords, label = "Ubicación actual") {
   const addressInput = document.querySelector("#customerAddress");
   const locationUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
-  addressInput.value = `Ubicación actual: ${locationUrl}`;
+  addressInput.value = `${label}: ${locationUrl}`;
 
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`);
@@ -289,33 +438,40 @@ async function tryReverseGeocode(coords) {
       addressInput.value = `${data.display_name}\n${locationUrl}`;
     }
   } catch (error) {
-    addressInput.value = `Ubicación actual: ${locationUrl}`;
+    addressInput.value = `${label}: ${locationUrl}`;
   }
 }
 
 function useCurrentLocation() {
   const status = document.querySelector("#locationStatus");
 
+  if (deliveryMode.value === "Otra persona") {
+    status.textContent = "Para otra persona, toca el mapa para elegir la ubicación de entrega.";
+    return;
+  }
+
   if (!navigator.geolocation) {
     status.textContent = "Tu navegador no permite ubicación. Puedes llenar la dirección manualmente.";
     return;
   }
 
-  status.textContent = "Solicitando ubicación...";
+  status.textContent = "Solicitando ubicación precisa...";
   navigator.geolocation.getCurrentPosition(async (position) => {
     const coords = {
       lat: position.coords.latitude,
-      lng: position.coords.longitude
+      lng: position.coords.longitude,
+      accuracy: position.coords.accuracy
     };
     const kilometers = updateShippingFromCoords(coords);
+    setDeliveryMarker(coords);
     await tryReverseGeocode(coords);
     status.textContent = `Ubicación tomada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
   }, () => {
     status.textContent = "No se pudo tomar la ubicación. Puedes llenar la dirección manualmente.";
   }, {
     enableHighAccuracy: true,
-    timeout: 12000,
-    maximumAge: 300000
+    timeout: 20000,
+    maximumAge: 0
   });
 }
 
@@ -326,11 +482,22 @@ function validateOrder() {
   }
 
   const name = document.querySelector("#customerName").value.trim();
+  const phone = document.querySelector("#customerPhone").value.trim();
   const address = document.querySelector("#customerAddress").value.trim();
+  const messageAddress = cleanAddressForMessage(address);
   const buildingType = document.querySelector("#buildingType").value;
+  const mode = document.querySelector("#deliveryMode").value;
+  const recipientName = document.querySelector("#recipientName").value.trim();
+  const recipientPhone = document.querySelector("#recipientPhone").value.trim();
+  const scheduleText = getDeliveryScheduleText();
 
   if (!name) {
     showToast("Escribe el nombre para el pedido.");
+    return false;
+  }
+
+  if (!isTenDigitPhone(phone)) {
+    showToast("El teléfono debe tener exactamente 10 dígitos.");
     return false;
   }
 
@@ -339,8 +506,38 @@ function validateOrder() {
     return false;
   }
 
+  if (mode !== "Otra persona" && !customerCoords) {
+    showToast("Usa tu ubicación actual para calcular el envío.");
+    return false;
+  }
+
   if (!buildingType) {
     showToast("Selecciona el tipo de edificio.");
+    return false;
+  }
+
+  if (mode === "Otra persona" && (!recipientName || !isTenDigitPhone(recipientPhone))) {
+    showToast("Escribe nombre y teléfono de 10 dígitos de quien recibe.");
+    return false;
+  }
+
+  if (!scheduleText) {
+    showToast("Selecciona el horario de entrega.");
+    return false;
+  }
+
+  if (deliverySchedule.value === "Personalizado" && !isTimeInDeliveryRange(customDeliveryTime.value)) {
+    showToast("El horario personalizado debe estar entre 12:00 y 18:00.");
+    return false;
+  }
+
+  if (advanceProduct.value === "Sí" && (!advanceDate.value || !advanceTime.value)) {
+    showToast("Selecciona día y horario del anticipo.");
+    return false;
+  }
+
+  if (advanceProduct.value === "Sí" && !isTimeInDeliveryRange(advanceTime.value)) {
+    showToast("El horario del anticipo debe estar entre 12:00 y 18:00.");
     return false;
   }
 
@@ -356,12 +553,21 @@ function sendOrder() {
   const name = document.querySelector("#customerName").value.trim();
   const phone = document.querySelector("#customerPhone").value.trim() || "Sin teléfono";
   const address = document.querySelector("#customerAddress").value.trim();
+  const messageAddress = cleanAddressForMessage(address);
   const buildingType = document.querySelector("#buildingType").value;
   const addressDetails = document.querySelector("#addressDetails").value.trim() || "Sin especificaciones";
   const payment = document.querySelector("#paymentMethod").value;
-  const locationLine = customerCoords
-    ? `Ubicación GPS: https://www.google.com/maps?q=${customerCoords.lat},${customerCoords.lng}`
-    : "Ubicación GPS: no enviada";
+  const scheduleText = getDeliveryScheduleText();
+  const advanceLine = advanceProduct.value === "Sí"
+    ? [`*Anticipo de producto:* Sí`, `*Día del anticipo:* ${advanceDate.value}`, `*Horario del anticipo:* ${advanceTime.value}`]
+    : ["*Anticipo de producto:* No"];
+  const mode = document.querySelector("#deliveryMode").value;
+  const recipientName = document.querySelector("#recipientName").value.trim();
+  const recipientPhone = document.querySelector("#recipientPhone").value.trim();
+  const recipientLine = mode === "Otra persona"
+    ? [`*Entrega para:* Otra persona`, `*Recibe:* ${recipientName}`, `*Teléfono de quien recibe:* ${recipientPhone}`]
+    : ["*Entrega para:* Yo recibo el pedido"];
+  const locationLine = getPreciseLocationLine();
   const items = rows
     .map((row) => `- ${row.quantity} x ${row.name} (${row.presentation}) = ${money(row.subtotal)}`)
     .join("\n");
@@ -371,18 +577,21 @@ function sendOrder() {
     "",
     items,
     "",
-    `Subtotal productos: ${money(subtotal)}`,
-    `Envío estimado: ${money(shipping)}`,
-    `Total estimado: ${money(total)}`,
+    `*Subtotal productos:* ${money(subtotal)}`,
+    `*Envío estimado:* ${money(shipping)}`,
+    `*Total estimado:* ${money(total)}`,
     "",
-    `Nombre: ${name}`,
-    `Teléfono: ${phone}`,
-    `Dirección: ${address}`,
-    `Tipo de edificio: ${buildingType}`,
-    `Especificaciones: ${addressDetails}`,
+    `*Nombre:* ${name}`,
+    `*Teléfono:* ${phone}`,
+    ...recipientLine,
+    `*Dirección exacta:* ${messageAddress}`,
+    `*Tipo de edificio:* ${buildingType}`,
+    `*Especificaciones:* ${addressDetails}`,
+    `*Horario de entrega:* ${scheduleText}`,
+    ...advanceLine,
     locationLine,
     "",
-    `Forma de pago: ${payment}`,
+    `*Forma de pago:* ${payment}`,
     "Si pago por transferencia, enviaré el comprobante por WhatsApp."
   ].join("\n");
 
@@ -419,6 +628,37 @@ document.querySelector("#openCart").addEventListener("click", openCart);
 document.querySelector("#closeCart").addEventListener("click", closeCart);
 document.querySelector("#sendOrder").addEventListener("click", sendOrder);
 document.querySelector("#useLocation").addEventListener("click", useCurrentLocation);
+document.querySelector("#customerAddress").addEventListener("change", updateShippingFromAddressText);
+document.querySelector("#customerAddress").addEventListener("blur", updateShippingFromAddressText);
+
+document.querySelectorAll("#customerPhone, #recipientPhone").forEach((input) => {
+  input.addEventListener("input", () => {
+    input.value = onlyDigits(input.value);
+  });
+});
+
+deliverySchedule.addEventListener("change", () => {
+  customDeliveryFields.hidden = deliverySchedule.value !== "Personalizado";
+});
+
+advanceProduct.addEventListener("change", () => {
+  advanceFields.hidden = advanceProduct.value !== "Sí";
+});
+
+deliveryMode.addEventListener("change", () => {
+  const isOtherPerson = deliveryMode.value === "Otra persona";
+  otherPersonFields.hidden = !isOtherPerson;
+  mapPicker.hidden = !isOtherPerson;
+  document.querySelector("#useLocation").hidden = isOtherPerson;
+
+  if (isOtherPerson) {
+    initDeliveryMap();
+  }
+
+  document.querySelector("#locationStatus").textContent = isOtherPerson
+    ? "Toca el mapa para elegir la ubicación de entrega o escribe la dirección."
+    : "Usa tu ubicación actual para calcular el envío.";
+});
 
 cartDrawer.addEventListener("click", (event) => {
   if (event.target === cartDrawer) closeCart();
@@ -429,8 +669,24 @@ document.querySelector("#copyClabe").addEventListener("click", async () => {
   showToast("CLABE copiada.");
 });
 
-document.querySelector("#cardInfo").addEventListener("click", () => {
-  showToast("Para tarjeta hay que conectar una cuenta de cobro segura antes de publicar.");
+document.addEventListener("pointerdown", (event) => {
+  const target = event.target.closest("button, a");
+  if (!target) return;
+
+  target.classList.remove("tap-feedback");
+  window.requestAnimationFrame(() => target.classList.add("tap-feedback"));
+});
+
+document.addEventListener("animationend", (event) => {
+  if (event.animationName === "tapPop") {
+    event.target.classList.remove("tap-feedback");
+  }
+});
+
+document.querySelector("#welcomeScreen").addEventListener("animationend", (event) => {
+  if (event.animationName === "welcomeExit") {
+    event.currentTarget.remove();
+  }
 });
 
 renderProducts();
