@@ -1,10 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Naturfreeze Cancún | Productos congelados</title>
-    <meta name="description" content="Tienda de productos congelados Naturfreeze Cancún con carrito, entregas locales y pedidos por WhatsApp.">
+    <title>Naturfreeze CancÃºn | Productos congelados</title>
+    <meta name="description" content="Tienda de productos congelados Naturfreeze CancÃºn con carrito, entregas locales y pedidos por WhatsApp.">
+    <meta name="theme-color" content="#101923">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="assets/logo-naturfreeze-mark.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -15,13 +18,13 @@
     <div class="welcome-screen" id="welcomeScreen" aria-live="polite">
       <div class="welcome-card">
         <span>Bienvenido/a</span>
-        <strong>¿List@ para ordenar?</strong>
+        <strong>Â¿List@ para ordenar?</strong>
       </div>
     </div>
 
     <header class="site-header">
       <a class="brand sliding-logo" href="#inicio" aria-label="Naturfreeze inicio">
-        <img src="assets/logo-naturfreeze-mark.jpg" alt="Naturfreeze Cancún">
+        <img src="assets/logo-naturfreeze-mark.jpg" alt="Naturfreeze CancÃºn">
       </a>
       <nav class="nav-links" aria-label="Principal">
         <a href="#productos">Productos</a>
@@ -29,19 +32,28 @@
         <a href="#entregas">Entregas</a>
         <a href="#contacto">Contacto</a>
       </nav>
-      <button class="cart-button" id="openCart" type="button" aria-label="Abrir carrito">
-        <span>Mis pedidos</span>
-        <strong id="cartCount">0</strong>
-      </button>
+      <div class="header-actions">
+        <button class="install-button" id="installApp" type="button" hidden>Instalar app</button>
+        <button class="admin-button" id="openAdmin" type="button" aria-label="Iniciar sesión como administrador">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 21a8 8 0 0 0-16 0"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </button>
+        <button class="cart-button" id="openCart" type="button" aria-label="Abrir carrito">
+          <span>Mis pedidos</span>
+          <strong id="cartCount">0</strong>
+        </button>
+      </div>
     </header>
 
     <main>
       <section class="hero" id="inicio">
         <div class="hero-copy">
-          <img class="hero-logo" src="assets/logo-naturfreeze-cropped.jpg" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
-          <span class="eyebrow">Congelados premium en Cancún</span>
+          <img class="hero-logo" src="assets/logo-naturfreeze-cropped.jpg" alt="Naturfreeze CancÃºn, frescura que preserva lo esencial">
+          <span class="eyebrow">Congelados premium en CancÃºn</span>
           <h1>Frescura que preserva lo esencial.</h1>
-          <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atención directa por WhatsApp.</p>
+          <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atenciÃ³n directa por WhatsApp.</p>
           <div class="hero-actions">
             <a class="primary-action" href="#productos">Comprar ahora</a>
             <a class="secondary-action" href="#pagos">Ver formas de pago</a>
@@ -67,16 +79,16 @@
       </section>
 
       <section class="trust-strip" aria-label="Beneficios">
-        <div><strong>-18 °C</strong><span>Conservación recomendada</span></div>
-        <div><strong>Cancún</strong><span>Entrega local confiable</span></div>
+        <div><strong>-18 Â°C</strong><span>ConservaciÃ³n recomendada</span></div>
+        <div><strong>CancÃºn</strong><span>Entrega local confiable</span></div>
         <div><strong>Premium</strong><span>Calidad seleccionada</span></div>
-        <div><strong>WhatsApp</strong><span>Atención personalizada</span></div>
+        <div><strong>WhatsApp</strong><span>AtenciÃ³n personalizada</span></div>
       </section>
 
       <section class="section-head" id="productos">
-        <span class="eyebrow">Catálogo</span>
+        <span class="eyebrow">CatÃ¡logo</span>
         <h2>Productos congelados</h2>
-        <p>Busca un producto, agrégalo a mis pedidos y confirma dirección, envío y pago antes de mandarlo por WhatsApp.</p>
+        <p>Busca un producto, agrÃ©galo a mis pedidos y confirma direcciÃ³n, envÃ­o y pago antes de mandarlo por WhatsApp.</p>
       </section>
 
       <section class="catalog-tools" aria-label="Buscar y filtrar productos">
@@ -98,7 +110,7 @@
       <section class="payment-section" id="pagos">
         <div class="section-head compact">
           <span class="eyebrow">Formas de pago</span>
-          <h2>Compra fácil y confirma rápido</h2>
+          <h2>Compra fÃ¡cil y confirma rÃ¡pido</h2>
         </div>
         <div class="payment-grid">
           <article class="payment-panel">
@@ -106,9 +118,9 @@
             <dl>
               <div><dt>CLABE</dt><dd>722969010584124963</dd></div>
               <div><dt>Beneficiario</dt><dd>Edwin Natanael Cauich Duran</dd></div>
-            <div><dt>Institución</dt><dd>Mercado Pago W</dd></div>
+            <div><dt>InstituciÃ³n</dt><dd>Mercado Pago W</dd></div>
             </dl>
-            <p class="payment-note">Después de transferir, envía el comprobante al WhatsApp 998 350 0558 para confirmar tu pedido.</p>
+            <p class="payment-note">DespuÃ©s de transferir, envÃ­a el comprobante al WhatsApp 998 350 0558 para confirmar tu pedido.</p>
             <button class="copy-button" id="copyClabe" type="button">Copiar CLABE</button>
           </article>
         </div>
@@ -118,11 +130,11 @@
         <div>
           <span class="eyebrow">Entrega</span>
           <h2>Servicio para hogares, hoteles y negocios</h2>
-          <p>El envío se calcula a partir de los kilómetros por recorrer desde nuestro punto de partida.</p>
+          <p>El envÃ­o se calcula a partir de los kilÃ³metros por recorrer desde nuestro punto de partida.</p>
         </div>
         <div class="delivery-card">
-          <strong id="deliveryPreview">Según distancia</strong>
-          <span>Envío base estimado</span>
+          <strong id="deliveryPreview">SegÃºn distancia</strong>
+          <span>EnvÃ­o base estimado</span>
         </div>
       </section>
 
@@ -130,7 +142,7 @@
         <div>
           <span class="eyebrow">Contacto</span>
           <h2>Listo para levantar pedido</h2>
-          <p>Escríbenos para disponibilidad, mayoreo o entregas especiales.</p>
+          <p>EscrÃ­benos para disponibilidad, mayoreo o entregas especiales.</p>
         </div>
         <a class="whatsapp-action" href="https://wa.me/529983500558?text=Hola%20Naturfreeze%2C%20quiero%20informacion%20de%20productos%20congelados" target="_blank" rel="noreferrer">WhatsApp 998 350 0558</a>
       </section>
@@ -149,14 +161,14 @@
         <div class="cart-items" id="cartItems"></div>
 
         <div class="checkout-box">
-          <h3>Seleccionar dirección</h3>
+          <h3>Seleccionar direcciÃ³n</h3>
           <label for="customerName">Nombre</label>
           <input id="customerName" type="text" placeholder="Tu nombre" autocomplete="name">
 
-          <label for="customerPhone">Teléfono</label>
-          <input id="customerPhone" type="tel" placeholder="10 dígitos" autocomplete="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}">
+          <label for="customerPhone">TelÃ©fono</label>
+          <input id="customerPhone" type="tel" placeholder="10 dÃ­gitos" autocomplete="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}">
 
-          <label for="deliveryMode">¿Quién recibe?</label>
+          <label for="deliveryMode">Â¿QuiÃ©n recibe?</label>
           <select id="deliveryMode">
             <option value="Yo recibo el pedido">Yo recibo el pedido</option>
             <option value="Otra persona">Enviar a otra persona</option>
@@ -166,28 +178,28 @@
             <label for="recipientName">Nombre de quien recibe</label>
             <input id="recipientName" type="text" placeholder="Nombre de la persona">
 
-            <label for="recipientPhone">Teléfono de quien recibe</label>
-            <input id="recipientPhone" type="tel" placeholder="10 dígitos" inputmode="numeric" maxlength="10" pattern="[0-9]{10}">
+            <label for="recipientPhone">TelÃ©fono de quien recibe</label>
+            <input id="recipientPhone" type="tel" placeholder="10 dÃ­gitos" inputmode="numeric" maxlength="10" pattern="[0-9]{10}">
 
           </div>
 
-          <button class="location-button" id="useLocation" type="button">Usar ubicación actual</button>
-          <p class="field-help" id="locationStatus">Usa tu ubicación actual para calcular el envío.</p>
+          <button class="location-button" id="useLocation" type="button">Usar ubicaciÃ³n actual</button>
+          <p class="field-help" id="locationStatus">Usa tu ubicaciÃ³n actual para calcular el envÃ­o.</p>
 
           <div class="map-picker" id="mapPicker" hidden>
             <div class="map-picker-head">
-              <strong>Elegir ubicación en el mapa</strong>
+              <strong>Elegir ubicaciÃ³n en el mapa</strong>
               <span>Toca el punto exacto de entrega</span>
             </div>
-            <div class="delivery-map" id="deliveryMap" aria-label="Mapa para seleccionar ubicación de entrega"></div>
+            <div class="delivery-map" id="deliveryMap" aria-label="Mapa para seleccionar ubicaciÃ³n de entrega"></div>
           </div>
 
-          <label for="customerAddress">Dirección exacta</label>
-          <textarea id="customerAddress" rows="3" placeholder="Calle, número, colonia, referencia o enlace de ubicación de Google Maps"></textarea>
+          <label for="customerAddress">DirecciÃ³n exacta</label>
+          <textarea id="customerAddress" rows="3" placeholder="Calle, nÃºmero, colonia, referencia o enlace de ubicaciÃ³n de Google Maps"></textarea>
 
           <label for="buildingType">Tipo de edificio</label>
           <select id="buildingType" required>
-            <option value="">Selecciona una opción</option>
+            <option value="">Selecciona una opciÃ³n</option>
             <option value="Casa">Casa</option>
             <option value="Departamento">Departamento</option>
             <option value="Edificio">Edificio</option>
@@ -198,16 +210,16 @@
           </select>
 
           <label for="addressDetails">Especificaciones</label>
-          <textarea id="addressDetails" rows="2" placeholder="Piso, puerta, habitación, recepción, local, referencias, etc."></textarea>
+          <textarea id="addressDetails" rows="2" placeholder="Piso, puerta, habitaciÃ³n, recepciÃ³n, local, referencias, etc."></textarea>
 
           <label for="advanceProduct">Anticipo de producto</label>
           <select id="advanceProduct">
             <option value="No">No</option>
-            <option value="Sí">Sí</option>
+            <option value="SÃ­">SÃ­</option>
           </select>
 
           <div class="conditional-fields" id="advanceFields" hidden>
-            <label for="advanceDate">Día del anticipo</label>
+            <label for="advanceDate">DÃ­a del anticipo</label>
             <input id="advanceDate" type="date">
 
             <label for="advanceTime">Horario del anticipo</label>
@@ -235,19 +247,153 @@
 
           <label for="paymentMethod">Pago</label>
           <select id="paymentMethod">
-            <option value="Transferencia - enviaré comprobante por WhatsApp">Transferencia - enviaré comprobante por WhatsApp</option>
+            <option value="Transferencia - enviarÃ© comprobante por WhatsApp">Transferencia - enviarÃ© comprobante por WhatsApp</option>
             <option value="Efectivo al recibir">Efectivo al recibir</option>
           </select>
         </div>
 
         <div class="totals-box">
           <div><span>Subtotal productos</span><strong id="cartSubtotal">$0</strong></div>
-          <div><span>Envío estimado</span><strong id="shippingTotal">$25</strong></div>
+          <div><span>EnvÃ­o estimado</span><strong id="shippingTotal">$25</strong></div>
           <div class="grand-total"><span>Total estimado</span><strong id="cartTotal">$0</strong></div>
         </div>
 
         <button class="primary-action full" id="sendOrder" type="button">Enviar pedido por WhatsApp</button>
-        <p class="cart-note">Si pagas por transferencia, envía tu comprobante al WhatsApp después de mandar el pedido.</p>
+        <p class="cart-note">Si pagas por transferencia, envÃ­a tu comprobante al WhatsApp despuÃ©s de mandar el pedido.</p>
+      </div>
+    </aside>
+
+
+    <aside class="admin-drawer" id="adminDrawer" aria-hidden="true">
+      <div class="admin-shell" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+        <button class="icon-button admin-close" id="closeAdmin" type="button" aria-label="Salir del administrador">Salir</button>
+
+        <section class="admin-login-card" id="adminLogin">
+          <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze Cancun">
+          <span class="eyebrow">Acceso administrador</span>
+          <h2 id="adminTitle">Iniciar sesion</h2>
+          <p>Entra al panel interno para usar el punto de venta de NaturFreeze.</p>
+          <label for="adminPassword">Clave de administrador</label>
+          <input id="adminPassword" type="password" inputmode="numeric" placeholder="1234" autocomplete="current-password">
+          <button class="primary-action full" id="adminLoginButton" type="button">Entrar al panel</button>
+        </section>
+
+        <section class="admin-dashboard" id="adminPos" hidden>
+          <div class="admin-topbar">
+            <div class="admin-operator">
+              <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze">
+              <div>
+                <span>Admin conectado</span>
+                <strong>NaturFreeze POS</strong>
+              </div>
+            </div>
+            <div class="admin-top-actions">
+              <button class="secondary-action" id="adminLogout" type="button">Cerrar sesion</button>
+            </div>
+          </div>
+
+          <div class="admin-layout">
+            <aside class="admin-sidebar">
+              <span class="eyebrow">Control interno</span>
+              <h2>Panel de tienda</h2>
+              <nav class="admin-tabs" id="adminTabs" aria-label="Panel administrador">
+                <button class="active" type="button" data-admin-view="pos">Punto de venta</button>
+                <button type="button" data-admin-view="orders">Pedidos</button>
+                <button type="button" data-admin-view="products">Productos</button>
+              </nav>
+              <div class="admin-mini-card">
+                <span>Pedido rapido</span>
+                <strong id="adminOrderCount">0</strong>
+                <small>pedidos guardados en este navegador</small>
+              </div>
+            </aside>
+
+            <div class="admin-main">
+              <div class="admin-stats">
+                <div>
+                  <span>Total entregado</span>
+                  <strong id="posTotal">$0</strong>
+                </div>
+                <div>
+                  <span>Productos vendidos</span>
+                  <strong id="posCount">0</strong>
+                </div>
+                <div>
+                  <span>Ventas recibidas</span>
+                  <strong id="adminSalesTotal">$0</strong>
+                </div>
+                <div>
+                  <span>Catalogo</span>
+                  <strong id="adminProductsTotal">0</strong>
+                </div>
+              </div>
+
+              <section class="admin-view active" id="adminViewPos" data-admin-panel="pos">
+                <div class="admin-section-head">
+                  <div>
+                    <span class="eyebrow">Ventas</span>
+                    <h3>Punto de venta</h3>
+                  </div>
+                  <button class="copy-button" id="clearPos" type="button">Limpiar entregadas</button>
+                </div>
+
+                <div class="pos-summary">
+                  <div class="pos-summary-head">
+                    <h3>Ventas confirmadas</h3>
+                    <small>Se agregan al entregar pedidos</small>
+                  </div>
+                  <div class="pos-lines" id="posLines"></div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="adminViewOrders" data-admin-panel="orders">
+                <div class="admin-section-head">
+                  <div>
+                    <span class="eyebrow">Pedidos web</span>
+                    <h3>Pedidos recibidos</h3>
+                  </div>
+                  <button class="copy-button" id="clearOrders" type="button">Vaciar historial</button>
+                </div>
+                <div class="admin-orders" id="adminOrders"></div>
+              </section>
+
+              <section class="admin-view" id="adminViewProducts" data-admin-panel="products">
+                <div class="admin-section-head">
+                  <div>
+                    <span class="eyebrow">Control de pagina</span>
+                    <h3>Productos</h3>
+                  </div>
+                  <button class="copy-button" id="resetProductEdits" type="button">Restaurar</button>
+                </div>
+
+                <div class="product-admin-grid">
+                  <div class="product-editor">
+                    <label for="editProduct">Producto</label>
+                    <select id="editProduct"></select>
+                    <button class="secondary-action" id="newProductButton" type="button">Nuevo producto</button>
+                    <label for="editProductCategory">Categoria</label>
+                    <input id="editProductCategory" type="text" placeholder="pollo, pescado, fruta...">
+                    <label for="editProductName">Nombre</label>
+                    <input id="editProductName" type="text">
+                    <label for="editProductPrice">Precio</label>
+                    <input id="editProductPrice" type="number" min="0">
+                    <label for="editProductPresentation">Presentacion</label>
+                    <input id="editProductPresentation" type="text">
+                    <label for="editProductImage">Imagen</label>
+                    <input id="editProductImage" type="text" placeholder="assets/imagen.jpg">
+                    <label for="editProductUpload">Cargar imagen para probar</label>
+                    <input id="editProductUpload" type="file" accept="image/*">
+                    <label for="editProductDetail">Descripcion</label>
+                    <textarea id="editProductDetail" rows="4"></textarea>
+                    <button class="add-button" id="saveProductEdit" type="button">Guardar cambio</button>
+                    <small>Los cambios se guardan en este navegador para probarlos antes de subirlos definitivo.</small>
+                  </div>
+                  <div class="admin-product-list" id="adminProductCards"></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
       </div>
     </aside>
 
@@ -256,3 +402,4 @@
     <script src="app.js"></script>
   </body>
 </html>
+

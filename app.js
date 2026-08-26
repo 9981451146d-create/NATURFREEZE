@@ -1,5 +1,6 @@
-const WHATSAPP_NUMBER = "529983500558";
+﻿const WHATSAPP_NUMBER = "529983500558";
 const STORE_LOCATION = { lat: 21.173461, lng: -86.915554 };
+const OPENROUTESERVICE_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImI4NzgwYWRhYjhkOTRiYjZiYWJkNTM5ZTdkZjA3NmIxIiwiaCI6Im11cm11cjY0In0=";
 const BASE_SHIPPING = 25;
 const INCLUDED_KM = 3;
 const PRICE_PER_EXTRA_KM = 10;
@@ -21,7 +22,7 @@ const products = [
     presentation: "1 kilo",
     price: 170,
     image: "assets/pollo-picoso.jpg",
-    detail: "100% pechuga de pollo, congelado IQF y alto en proteína."
+    detail: "100% pechuga de pollo, congelado IQF y alto en proteÃ­na."
   },
   {
     id: "berries",
@@ -66,7 +67,7 @@ const products = [
     presentation: "1 kilo",
     price: 126,
     image: "assets/nuggets.jpg",
-    detail: "Prácticos, rendidores y listos para freír u hornear."
+    detail: "PrÃ¡cticos, rendidores y listos para freÃ­r u hornear."
   },
   {
     id: "filete-pechuga",
@@ -84,7 +85,7 @@ const products = [
     presentation: "1 kilo",
     price: 170,
     image: "assets/boneless.jpg",
-    detail: "Carne blanca seleccionada, alta en proteína y congelada IQF."
+    detail: "Carne blanca seleccionada, alta en proteÃ­na y congelada IQF."
   },
   {
     id: "filete-empanizado",
@@ -93,7 +94,7 @@ const products = [
     presentation: "1 kilo",
     price: 184,
     image: "assets/filete-empanizado.jpg",
-    detail: "Fácil de preparar, ideal para freír, hornear o acompañar comidas."
+    detail: "FÃ¡cil de preparar, ideal para freÃ­r, hornear o acompaÃ±ar comidas."
   },
   {
     id: "aros-cebolla",
@@ -102,9 +103,19 @@ const products = [
     presentation: "1 kilo",
     price: 100,
     image: "assets/aros-cebolla.jpg",
-    detail: "Crujientes y rápidos de preparar como entrada o snack."
+    detail: "Crujientes y rÃ¡pidos de preparar como entrada o snack."
   }
 ];
+
+const PRODUCT_EDITS_KEY = "naturfreezeProductEdits";
+const CUSTOM_PRODUCTS_KEY = "naturfreezeCustomProducts";
+const ORDERS_KEY = "naturfreezeAdminOrders";
+let productEdits = readStored(PRODUCT_EDITS_KEY, {});
+let customProducts = readStored(CUSTOM_PRODUCTS_KEY, []);
+let adminOrders = readStored(ORDERS_KEY, []);
+
+products.push(...customProducts);
+applyStoredProductEdits();
 
 const cart = new Map();
 let activeFilter = "todos";
@@ -114,6 +125,7 @@ let customerCoords = null;
 let customerAccuracy = null;
 
 const productGrid = document.querySelector("#productGrid");
+const installAppButton = document.querySelector("#installApp");
 const cartDrawer = document.querySelector("#cartDrawer");
 const cartItems = document.querySelector("#cartItems");
 const cartCount = document.querySelector("#cartCount");
@@ -133,10 +145,47 @@ const advanceProduct = document.querySelector("#advanceProduct");
 const advanceFields = document.querySelector("#advanceFields");
 const advanceDate = document.querySelector("#advanceDate");
 const advanceTime = document.querySelector("#advanceTime");
+const adminDrawer = document.querySelector("#adminDrawer");
+const adminLogin = document.querySelector("#adminLogin");
+const adminPos = document.querySelector("#adminPos");
+const adminPassword = document.querySelector("#adminPassword");
+const adminProduct = document.querySelector("#adminProduct");
+const adminQuantity = document.querySelector("#adminQuantity");
+const posLines = document.querySelector("#posLines");
+const posTotal = document.querySelector("#posTotal");
+const posCount = document.querySelector("#posCount");
+const adminOrderCount = document.querySelector("#adminOrderCount");
+const adminSalesTotal = document.querySelector("#adminSalesTotal");
+const adminProductsTotal = document.querySelector("#adminProductsTotal");
+const adminOrdersElement = document.querySelector("#adminOrders");
+const adminProductCards = document.querySelector("#adminProductCards");
+const editProduct = document.querySelector("#editProduct");
+const editProductCategory = document.querySelector("#editProductCategory");
+const editProductName = document.querySelector("#editProductName");
+const editProductPrice = document.querySelector("#editProductPrice");
+const editProductPresentation = document.querySelector("#editProductPresentation");
+const editProductImage = document.querySelector("#editProductImage");
+const editProductUpload = document.querySelector("#editProductUpload");
+const editProductDetail = document.querySelector("#editProductDetail");
+let activeOrderId = null;
+let deferredInstallPrompt = null;
+
+let posCart = [];
 
 let deliveryMap = null;
 let deliveryMarker = null;
 let storeMarker = null;
+let adminRouteMap = null;
+let adminRouteUserMarker = null;
+let adminRouteDestMarker = null;
+let adminRouteLine = null;
+let adminRouteAccuracyCircle = null;
+let adminRouteWatchId = null;
+let adminRouteRequesting = false;
+let adminRouteLoadedFor = null;
+let adminRouteSummary = null;
+let adminRouteSteps = [];
+let activeRouteStepIndex = 0;
 
 function money(value) {
   return new Intl.NumberFormat("es-MX", {
@@ -144,6 +193,57 @@ function money(value) {
     currency: "MXN",
     maximumFractionDigits: 0
   }).format(value);
+}
+
+function readStored(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function writeStored(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function setupInstallableApp() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    });
+  }
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installAppButton.hidden = false;
+  });
+
+  installAppButton.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) {
+      showToast("Si no aparece, usa el menu del navegador y toca Instalar app.");
+      return;
+    }
+
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installAppButton.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    installAppButton.hidden = true;
+    showToast("NaturFreeze instalada.");
+  });
+}
+
+function applyStoredProductEdits() {
+  Object.entries(productEdits).forEach(([id, edit]) => {
+    const product = products.find((item) => item.id === id);
+    if (product) Object.assign(product, edit);
+  });
 }
 
 function normalizeText(text) {
@@ -173,18 +273,18 @@ function cleanAddressForMessage(address) {
     .split("\n")
     .filter((line) => !line.includes("google.com/maps"))
     .join("\n")
-    .replace(/Ubicación actual:\s*/i, "")
-    .replace(/Ubicación seleccionada:\s*/i, "")
-    .trim() || "Sin dirección escrita";
+    .replace(/UbicaciÃ³n actual:\s*/i, "")
+    .replace(/UbicaciÃ³n seleccionada:\s*/i, "")
+    .trim() || "Sin direcciÃ³n escrita";
 }
 
 function getPreciseLocationLine() {
-  if (!customerCoords) return "*Ubicación exacta:* no enviada";
+  if (!customerCoords) return "*UbicaciÃ³n exacta:* no enviada";
 
   const lat = formatCoord(customerCoords.lat);
   const lng = formatCoord(customerCoords.lng);
-  const accuracy = customerAccuracy ? ` | *Precisión aprox.:* ±${Math.round(customerAccuracy)} m` : "";
-  return `*Ubicación exacta:* https://www.google.com/maps?q=${lat},${lng} | *Coordenadas:* ${lat}, ${lng}${accuracy}`;
+  const accuracy = customerAccuracy ? ` | *PrecisiÃ³n aprox.:* Â±${Math.round(customerAccuracy)} m` : "";
+  return `*UbicaciÃ³n exacta:* https://www.google.com/maps?q=${lat},${lng} | *Coordenadas:* ${lat}, ${lng}${accuracy}`;
 }
 
 function isTimeInDeliveryRange(value) {
@@ -199,6 +299,667 @@ function getDeliveryScheduleText() {
   return deliverySchedule.value;
 }
 
+
+function openAdmin() {
+  adminDrawer.classList.add("open");
+  adminDrawer.setAttribute("aria-hidden", "false");
+  renderAdminDashboard();
+  window.setTimeout(() => adminPassword.focus(), 80);
+}
+
+function closeAdmin() {
+  adminDrawer.classList.remove("open");
+  adminDrawer.setAttribute("aria-hidden", "true");
+  stopAdminRouteTracking();
+  resetAdminRouteMap();
+}
+
+function renderAdminProducts() {
+  if (editProduct) {
+    const currentProductId = editProduct.value;
+    editProduct.innerHTML = products.map((product) => `
+      <option value="${product.id}">${product.name}</option>
+    `).join("");
+    const selectedProductId = products.some((product) => product.id === currentProductId)
+      ? currentProductId
+      : products[0].id;
+    loadProductEditor(selectedProductId);
+  }
+}
+
+function loginAdmin() {
+  if (adminPassword.value !== "1234") {
+    showToast("Clave incorrecta.");
+    return;
+  }
+
+  adminLogin.hidden = true;
+  adminPos.hidden = false;
+  switchAdminView("pos");
+  renderAdminDashboard();
+  showToast("Administrador activo.");
+}
+
+function logoutAdmin() {
+  adminPassword.value = "";
+  adminLogin.hidden = false;
+  adminPos.hidden = true;
+}
+
+function addPosItem() {
+  const product = products.find((item) => item.id === adminProduct.value);
+  const quantity = Math.max(1, Number(adminQuantity.value) || 1);
+  if (!product) return;
+
+  posCart.push({ ...product, quantity, subtotal: product.price * quantity });
+  adminQuantity.value = "1";
+  renderPosSale();
+}
+
+function renderPosSale() {
+  const deliveredOrders = adminOrders.filter((order) => order.status === "Entregado" && !order.saleCleared);
+  const total = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
+  const count = deliveredOrders.reduce((sum, order) => {
+    return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+  }, 0);
+
+  posTotal.textContent = money(total);
+  posCount.textContent = count;
+  renderAdminStats();
+
+  if (!deliveredOrders.length) {
+    posLines.innerHTML = '<p class="cart-note">Aun no hay ventas entregadas.</p>';
+    return;
+  }
+
+  posLines.innerHTML = deliveredOrders.map((order) => `
+    <div class="pos-line">
+      <div>
+        <strong>${order.customer}</strong>
+        <small>${order.items.map((item) => `${item.quantity} x ${item.name}`).join(" | ")}</small>
+        <small>${order.deliveredAt || order.date}</small>
+      </div>
+      <strong>${money(order.total)}</strong>
+    </div>
+  `).join("");
+}
+
+function clearPosSale() {
+  adminOrders = adminOrders.map((order) => {
+    if (order.status === "Entregado") return { ...order, saleCleared: true };
+    return order;
+  });
+  writeStored(ORDERS_KEY, adminOrders);
+  renderPosSale();
+}
+
+function renderAdminDashboard() {
+  renderAdminProducts();
+  renderPosSale();
+  renderAdminOrders();
+  renderAdminProductCards();
+  renderAdminStats();
+}
+
+function renderAdminStats() {
+  if (!adminOrderCount) return;
+  const pendingOrders = adminOrders.filter((order) => order.status !== "Entregado").length;
+  const ordersTotal = adminOrders
+    .filter((order) => order.status === "Entregado" && !order.saleCleared)
+    .reduce((sum, order) => sum + order.total, 0);
+  adminOrderCount.textContent = pendingOrders;
+  adminSalesTotal.textContent = money(ordersTotal);
+  adminProductsTotal.textContent = products.length;
+}
+
+function switchAdminView(view) {
+  document.querySelectorAll("[data-admin-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminView === view);
+  });
+  document.querySelectorAll("[data-admin-panel]").forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.adminPanel === view);
+  });
+}
+
+function saveWebOrder(order) {
+  adminOrders = [order, ...adminOrders].slice(0, 30);
+  writeStored(ORDERS_KEY, adminOrders);
+  renderAdminDashboard();
+}
+
+function renderAdminOrders() {
+  if (!adminOrdersElement) return;
+
+  if (!adminOrders.length) {
+    adminOrdersElement.innerHTML = '<p class="cart-note">Aun no hay pedidos enviados desde esta pagina.</p>';
+    renderAdminStats();
+    return;
+  }
+
+  adminOrdersElement.innerHTML = adminOrders.map((order) => `
+    <article class="admin-order-card ${activeOrderId === order.id ? "open" : ""}">
+      <div>
+        <h4>${order.customer} <span class="order-status">${order.status || "Pendiente"}</span></h4>
+        <p>${order.date} | ${order.phone} | ${order.payment}</p>
+        <p>${order.address}</p>
+        <p>${order.schedule} | Envio: ${money(order.shipping)}</p>
+        ${activeOrderId === order.id ? `
+          <div class="order-detail-panel">
+            <p><strong>Recibe:</strong> ${order.recipient || order.customer}</p>
+            <p><strong>Edificio:</strong> ${order.buildingType}</p>
+            <p><strong>Especificaciones:</strong> ${order.addressDetails}</p>
+            <ul>
+              ${order.items.map((item) => `<li>${item.quantity} x ${item.name} - ${money(item.subtotal)}</li>`).join("")}
+            </ul>
+            <div class="order-actions">
+              <button class="secondary-action" type="button" data-route-order="${order.id}">Ir a entrega</button>
+              <button class="copy-button" type="button" data-arrived-order="${order.id}">Estoy en la entrega</button>
+              <button class="add-button" type="button" data-deliver-order="${order.id}">Marcar entregado</button>
+            </div>
+            <div class="admin-route-card" id="adminRouteCard" hidden>
+              <div>
+                <strong>Ruta de entrega</strong>
+                <span id="adminRouteStatus">Pide tu ubicacion para iniciar.</span>
+              </div>
+              <div class="admin-navigation">
+                <div class="admin-route-map" id="adminRouteMap" aria-label="Mapa interno de entrega"></div>
+                <div class="route-steps-card" id="routeStepsCard">
+                  <span class="route-steps-label">Navegacion paso a paso</span>
+                  <strong id="nextRouteInstruction">Esperando ruta...</strong>
+                  <small id="nextRouteDistance">Cuando cargue la ruta apareceran los metros.</small>
+                  <div class="route-step-progress" id="routeStepProgress">Paso 0 de 0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+      </div>
+      <div class="order-card-side">
+        <strong class="order-total-pill">${money(order.total)}</strong>
+        <button class="copy-button" type="button" data-open-order="${order.id}">${activeOrderId === order.id ? "Cerrar" : "Entrar"}</button>
+      </div>
+    </article>
+  `).join("");
+  renderAdminStats();
+}
+
+function clearWebOrders() {
+  adminOrders = adminOrders.filter((order) => order.status === "Entregado");
+  writeStored(ORDERS_KEY, adminOrders);
+  renderAdminOrders();
+  showToast("Pedidos pendientes limpiados.");
+}
+
+function openDeliveryRoute(id) {
+  const order = adminOrders.find((item) => item.id === Number(id));
+  if (!order) return;
+
+  activeOrderId = order.id;
+  renderAdminOrders();
+
+  const routeCard = document.querySelector("#adminRouteCard");
+  const routeStatus = document.querySelector("#adminRouteStatus");
+  if (routeCard) routeCard.hidden = false;
+
+  if (routeStatus) routeStatus.textContent = "Pidiendo tu ubicacion actual...";
+
+  if (!navigator.geolocation) {
+    if (routeStatus) routeStatus.textContent = "Tu navegador no permite GPS.";
+    return;
+  }
+
+  stopAdminRouteTracking();
+  resetAdminRouteMap();
+
+  adminRouteWatchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const current = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        heading: position.coords.heading
+      };
+      renderAdminRouteMap(order, current);
+    },
+    () => {
+      if (routeStatus) routeStatus.textContent = "No pude leer tu ubicacion actual.";
+      showToast("No pude leer tu ubicacion actual.");
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
+}
+
+function stopAdminRouteTracking() {
+  if (adminRouteWatchId !== null && navigator.geolocation) {
+    navigator.geolocation.clearWatch(adminRouteWatchId);
+    adminRouteWatchId = null;
+  }
+}
+
+function resetAdminRouteMap() {
+  if (adminRouteMap) adminRouteMap.remove();
+  adminRouteMap = null;
+  adminRouteUserMarker = null;
+  adminRouteDestMarker = null;
+  adminRouteLine = null;
+  adminRouteAccuracyCircle = null;
+  adminRouteRequesting = false;
+  adminRouteLoadedFor = null;
+  adminRouteSummary = null;
+  adminRouteSteps = [];
+  activeRouteStepIndex = 0;
+}
+
+function getRouteEstimate(kilometers) {
+  const drivingMinutes = Math.max(2, Math.ceil((kilometers / 28) * 60));
+  return `${kilometers.toFixed(2)} km | ${drivingMinutes} min aprox.`;
+}
+
+function formatRouteSummary(distanceMeters, durationSeconds) {
+  const kilometers = distanceMeters / 1000;
+  const minutes = Math.max(1, Math.round(durationSeconds / 60));
+  return `${kilometers.toFixed(2)} km | ${minutes} min aprox.`;
+}
+
+function formatStepDistance(meters) {
+  if (!Number.isFinite(meters)) return "";
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+function pointToCoords(point) {
+  return point ? { lat: point[0], lng: point[1] } : null;
+}
+
+function updateActiveRouteStep(current) {
+  if (!adminRouteSteps.length) return;
+
+  const currentCoords = { lat: current.lat, lng: current.lng };
+  const nextStep = adminRouteSteps[activeRouteStepIndex + 1];
+  const nextPoint = pointToCoords(nextStep?.point);
+  if (!nextPoint) {
+    renderRouteInstructions(adminRouteSteps, activeRouteStepIndex);
+    return;
+  }
+
+  const metersToNextStep = distanceKm(currentCoords, nextPoint) * 1000;
+  if (metersToNextStep <= 45 && activeRouteStepIndex < adminRouteSteps.length - 1) {
+    activeRouteStepIndex += 1;
+  }
+
+  renderRouteInstructions(adminRouteSteps, activeRouteStepIndex, metersToNextStep);
+}
+
+function rotateDriverMarker(heading) {
+  if (!adminRouteUserMarker || !Number.isFinite(heading)) return;
+  const markerElement = adminRouteUserMarker.getElement();
+  const arrowElement = markerElement?.querySelector("span");
+  if (arrowElement) {
+    arrowElement.style.transform = `rotate(${heading}deg) translateY(-4px)`;
+  }
+}
+
+function makeRouteIcon(type) {
+  const label = type === "driver" ? "" : "Entrega";
+  return L.divIcon({
+    className: `route-marker route-marker-${type}`,
+    html: `<span>${label}</span>`,
+    iconSize: [58, 58],
+    iconAnchor: [29, 29],
+    popupAnchor: [0, -24]
+  });
+}
+
+function enrichRouteSteps(steps, points) {
+  return steps.map((step) => {
+    const pointIndex = Array.isArray(step.way_points) ? step.way_points[0] : null;
+    return {
+      ...step,
+      point: Number.isInteger(pointIndex) ? points[pointIndex] : null
+    };
+  });
+}
+
+async function fetchOpenRouteGeometry(current, destination) {
+  const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
+    method: "POST",
+    headers: {
+      "Authorization": OPENROUTESERVICE_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      coordinates: [
+        [current.lng, current.lat],
+        [destination.lng, destination.lat]
+      ],
+      instructions: true,
+      language: "es"
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenRouteService ${response.status}`);
+  }
+
+  const data = await response.json();
+  const route = data.features?.[0];
+  const coordinates = route?.geometry?.coordinates || [];
+  const summary = route?.properties?.summary;
+  const segments = route?.properties?.segments || [];
+  if (!coordinates.length || !summary) {
+    throw new Error("Ruta sin geometria");
+  }
+
+  const points = coordinates.map(([lng, lat]) => [lat, lng]);
+
+  return {
+    points,
+    summary,
+    steps: enrichRouteSteps(segments.flatMap((segment) => segment.steps || []), points)
+  };
+}
+
+function renderAdminRouteMap(order, current) {
+  const mapElement = document.querySelector("#adminRouteMap");
+  const routeStatus = document.querySelector("#adminRouteStatus");
+  if (!mapElement || typeof L === "undefined") {
+    if (routeStatus) routeStatus.textContent = "El mapa no pudo cargar.";
+    return;
+  }
+
+  const destination = order.coords;
+  const accuracyText = current.accuracy ? ` Precision aprox.: ${Math.round(current.accuracy)} m.` : "";
+  if (destination) {
+    const kilometers = distanceKm(current, destination);
+    const routeText = adminRouteSummary
+      ? `Ruta por calles: ${formatRouteSummary(adminRouteSummary.distance, adminRouteSummary.duration)}`
+      : `Calculando ruta por calles... Aproximado: ${getRouteEstimate(kilometers)}`;
+    if (routeStatus) routeStatus.textContent = `En vivo: ${routeText}. Entrega: ${formatCoord(destination.lat)}, ${formatCoord(destination.lng)}.${accuracyText}`;
+  } else if (routeStatus) {
+    routeStatus.textContent = `En vivo: tu ubicacion actual ya aparece. Este pedido no tiene coordenadas exactas guardadas.${accuracyText}`;
+  }
+
+  if (!adminRouteMap) {
+    adminRouteMap = L.map(mapElement, {
+      zoomControl: true,
+      scrollWheelZoom: true
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: "&copy; OpenStreetMap &copy; CARTO",
+      maxZoom: 20
+    }).addTo(adminRouteMap);
+  }
+
+  const currentPoint = [current.lat, current.lng];
+  if (!adminRouteUserMarker) {
+    adminRouteUserMarker = L.marker(currentPoint, {
+      icon: makeRouteIcon("driver"),
+      zIndexOffset: 1000
+    }).addTo(adminRouteMap).bindPopup("Tu ubicacion actual").openPopup();
+  } else {
+    adminRouteUserMarker.setLatLng(currentPoint);
+  }
+  rotateDriverMarker(current.heading);
+
+  if (!adminRouteAccuracyCircle) {
+    adminRouteAccuracyCircle = L.circle(currentPoint, {
+    radius: current.accuracy || 40,
+      color: "#1d6df2",
+      fillColor: "#1d6df2",
+      fillOpacity: .10,
+      weight: 2
+    }).addTo(adminRouteMap);
+  } else {
+    adminRouteAccuracyCircle.setLatLng(currentPoint);
+    adminRouteAccuracyCircle.setRadius(current.accuracy || 40);
+  }
+
+  updateActiveRouteStep(current);
+
+  if (!destination) {
+    adminRouteMap.setView(currentPoint, 16);
+    window.setTimeout(() => adminRouteMap.invalidateSize(), 120);
+    return;
+  }
+
+  const destinationPoint = [destination.lat, destination.lng];
+  if (!adminRouteDestMarker) {
+    adminRouteDestMarker = L.marker(destinationPoint, {
+      icon: makeRouteIcon("dropoff")
+    }).addTo(adminRouteMap).bindPopup(`Entrega: ${order.address}`);
+  } else {
+    adminRouteDestMarker.setLatLng(destinationPoint);
+  }
+
+  const fallbackLinePoints = [currentPoint, destinationPoint];
+  if (!adminRouteLine) {
+    adminRouteLine = L.polyline(fallbackLinePoints, {
+      color: "#7fd733",
+      weight: 6,
+      opacity: .9,
+      dashArray: "8 8"
+    }).addTo(adminRouteMap);
+  }
+
+  if (!adminRouteLoadedFor && !adminRouteRequesting) {
+    loadOpenRouteLine(order, current, destination);
+  }
+
+  adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
+  window.setTimeout(() => adminRouteMap.invalidateSize(), 120);
+}
+
+async function loadOpenRouteLine(order, current, destination) {
+  const routeKey = `${order.id}:${formatCoord(current.lat)},${formatCoord(current.lng)}:${formatCoord(destination.lat)},${formatCoord(destination.lng)}`;
+  adminRouteRequesting = true;
+
+  try {
+    const route = await fetchOpenRouteGeometry(current, destination);
+    adminRouteSummary = route.summary;
+    adminRouteLoadedFor = routeKey;
+
+    if (!adminRouteMap) return;
+    adminRouteLine.setLatLngs(route.points);
+    adminRouteLine.setStyle({
+      color: "#7fd733",
+      weight: 7,
+      opacity: .95,
+      dashArray: ""
+    });
+    adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
+
+    const routeStatus = document.querySelector("#adminRouteStatus");
+    if (routeStatus) {
+      routeStatus.textContent = `En vivo: Ruta por calles: ${formatRouteSummary(route.summary.distance, route.summary.duration)}. Entrega: ${formatCoord(destination.lat)}, ${formatCoord(destination.lng)}.`;
+    }
+    adminRouteSteps = route.steps;
+    activeRouteStepIndex = 0;
+    renderRouteInstructions(adminRouteSteps, activeRouteStepIndex);
+  } catch (error) {
+    adminRouteLoadedFor = routeKey;
+    const routeStatus = document.querySelector("#adminRouteStatus");
+    if (routeStatus) routeStatus.textContent = "No pude calcular ruta por calles. Dejé la ruta aproximada en el mapa.";
+    adminRouteSteps = [];
+    activeRouteStepIndex = 0;
+    renderRouteInstructions([]);
+  } finally {
+    adminRouteRequesting = false;
+  }
+}
+
+function renderRouteInstructions(steps, activeIndex = 0, metersToNextStep = null) {
+  const nextInstruction = document.querySelector("#nextRouteInstruction");
+  const nextDistance = document.querySelector("#nextRouteDistance");
+  const stepProgress = document.querySelector("#routeStepProgress");
+  if (!nextInstruction || !nextDistance || !stepProgress) return;
+
+  if (!steps.length) {
+    nextInstruction.textContent = "Ruta aproximada";
+    nextDistance.textContent = "No llegaron indicaciones por calles.";
+    stepProgress.textContent = "Paso 0 de 0";
+    return;
+  }
+
+  const currentStep = steps[activeIndex] || steps[0];
+  nextInstruction.textContent = currentStep.instruction || "Sigue la ruta marcada";
+  nextDistance.textContent = metersToNextStep
+    ? `Siguiente maniobra en ${formatStepDistance(metersToNextStep)}`
+    : formatStepDistance(currentStep.distance);
+  stepProgress.textContent = `Paso ${activeIndex + 1} de ${steps.length}`;
+}
+
+function markOrderDelivered(id, detected = false) {
+  adminOrders = adminOrders.map((order) => {
+    if (order.id !== Number(id)) return order;
+    return {
+      ...order,
+      status: "Entregado",
+      deliveredAt: new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      deliveryDetected: detected
+    };
+  });
+  writeStored(ORDERS_KEY, adminOrders);
+  switchAdminView("pos");
+  renderAdminDashboard();
+  showToast("Pedido entregado y agregado al punto de venta.");
+}
+
+function checkDeliveryArrival(id) {
+  const order = adminOrders.find((item) => item.id === Number(id));
+  if (!order) return;
+
+  if (!order.coords || !navigator.geolocation) {
+    showToast("No hay GPS suficiente. Puedes marcarlo entregado manualmente.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const current = { lat: position.coords.latitude, lng: position.coords.longitude };
+      const kilometers = distanceKm(current, order.coords);
+      if (kilometers <= 0.18) {
+        markOrderDelivered(order.id, true);
+      } else {
+        showToast(`Aun estas a ${kilometers.toFixed(2)} km de la entrega.`);
+      }
+    },
+    () => showToast("No pude leer tu ubicacion actual."),
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
+}
+
+function loadProductEditor(id) {
+  const product = products.find((item) => item.id === id);
+  if (!product || !editProductName) return;
+
+  editProduct.value = product.id;
+  editProductCategory.value = product.category;
+  editProductName.value = product.name;
+  editProductPrice.value = product.price;
+  editProductPresentation.value = product.presentation;
+  editProductImage.value = product.image;
+  editProductDetail.value = product.detail;
+}
+
+function startNewProduct() {
+  editProduct.value = products[0]?.id || "";
+  editProductCategory.value = "";
+  editProductName.value = "";
+  editProductPrice.value = "";
+  editProductPresentation.value = "";
+  editProductImage.value = "";
+  editProductDetail.value = "";
+  editProduct.dataset.mode = "new";
+  showToast("Listo para crear producto nuevo.");
+}
+
+function productSlug(name) {
+  return normalizeText(name)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40) || `producto-${Date.now()}`;
+}
+
+function saveProductEdit() {
+  const existingProduct = products.find((item) => item.id === editProduct.value) || {};
+  const edit = {
+    category: editProductCategory.value.trim() || "general",
+    name: editProductName.value.trim() || existingProduct.name || "Producto nuevo",
+    price: Math.max(0, Number(editProductPrice.value) || 0),
+    presentation: editProductPresentation.value.trim() || existingProduct.presentation || "1 pieza",
+    image: editProductImage.value.trim() || existingProduct.image || "assets/logo-naturfreeze-mark.jpg",
+    detail: editProductDetail.value.trim() || existingProduct.detail || "Producto NaturFreeze."
+  };
+
+  if (editProduct.dataset.mode === "new") {
+    const product = { id: `${productSlug(edit.name)}-${Date.now()}`, ...edit };
+    products.push(product);
+    customProducts.push(product);
+    writeStored(CUSTOM_PRODUCTS_KEY, customProducts);
+    editProduct.dataset.mode = "";
+    renderAdminProducts();
+    loadProductEditor(product.id);
+    renderProducts();
+    renderCart();
+    renderAdminDashboard();
+    showToast("Producto nuevo agregado.");
+    return;
+  }
+
+  const product = products.find((item) => item.id === editProduct.value);
+  if (!product) return;
+
+  Object.assign(product, edit);
+  productEdits[product.id] = edit;
+  writeStored(PRODUCT_EDITS_KEY, productEdits);
+
+  customProducts = customProducts.map((item) => item.id === product.id ? product : item);
+  writeStored(CUSTOM_PRODUCTS_KEY, customProducts);
+
+  renderProducts();
+  renderCart();
+  renderAdminDashboard();
+  showToast("Producto actualizado en esta pagina.");
+}
+
+function resetProductEdits() {
+  productEdits = {};
+  customProducts = [];
+  localStorage.removeItem(PRODUCT_EDITS_KEY);
+  localStorage.removeItem(CUSTOM_PRODUCTS_KEY);
+  window.location.reload();
+}
+
+function previewUploadedProductImage(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    editProductImage.value = reader.result;
+    showToast("Imagen cargada para probar.");
+  });
+  reader.readAsDataURL(file);
+}
+
+function renderAdminProductCards() {
+  if (!adminProductCards) return;
+
+  adminProductCards.innerHTML = products.map((product) => `
+    <article class="admin-product-card">
+      <img src="${product.image}" alt="${product.name}">
+      <div>
+        <h4>${product.name}</h4>
+        <p>${product.presentation} | ${product.category}</p>
+        <p>${product.detail}</p>
+      </div>
+      <div class="admin-product-actions">
+        <strong>${money(product.price)}</strong>
+        <button class="copy-button" type="button" data-edit-product="${product.id}">Editar</button>
+      </div>
+    </article>
+  `).join("");
+}
 function getFilteredProducts() {
   const query = normalizeText(activeSearch.trim());
   return products.filter((product) => {
@@ -213,7 +974,7 @@ function renderProducts() {
   const visibleProducts = getFilteredProducts();
 
   if (!visibleProducts.length) {
-    productGrid.innerHTML = "<p class=\"empty-state\">No encontramos productos con esa búsqueda.</p>";
+    productGrid.innerHTML = "<p class=\"empty-state\">No encontramos productos con esa bÃºsqueda.</p>";
     return;
   }
 
@@ -266,10 +1027,10 @@ function renderCart() {
   cartSubtotal.textContent = money(subtotal);
   shippingTotal.textContent = rows.length ? money(shipping) : money(0);
   cartTotal.textContent = money(total);
-  deliveryPreview.textContent = "Según distancia";
+  deliveryPreview.textContent = "SegÃºn distancia";
 
   if (!rows.length) {
-    cartItems.innerHTML = "<p class=\"cart-note\">Tu pedido está vacío.</p>";
+    cartItems.innerHTML = "<p class=\"cart-note\">Tu pedido estÃ¡ vacÃ­o.</p>";
     renderProducts();
     return;
   }
@@ -360,13 +1121,13 @@ function updateShippingFromAddressText() {
 
   const kilometers = updateShippingFromCoords(coords);
   setDeliveryMarker(coords);
-  document.querySelector("#locationStatus").textContent = `Ubicación detectada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
+  document.querySelector("#locationStatus").textContent = `UbicaciÃ³n detectada. Distancia estimada: ${kilometers.toFixed(1)} km. EnvÃ­o: ${money(shipping)}.`;
 }
 
 function initDeliveryMap() {
   if (!deliveryMapElement || typeof L === "undefined") {
     if (deliveryMapElement) {
-      deliveryMapElement.innerHTML = "<p>El mapa no pudo cargar. Puedes escribir la dirección o pegar un enlace de ubicación.</p>";
+      deliveryMapElement.innerHTML = "<p>El mapa no pudo cargar. Puedes escribir la direcciÃ³n o pegar un enlace de ubicaciÃ³n.</p>";
     }
     return;
   }
@@ -414,18 +1175,18 @@ function setDeliveryMarker(coords) {
     deliveryMarker.setLatLng(position);
   }
 
-  deliveryMarker.bindPopup("Ubicación de entrega").openPopup();
+  deliveryMarker.bindPopup("UbicaciÃ³n de entrega").openPopup();
 }
 
 async function selectDeliveryCoords(coords) {
   const kilometers = updateShippingFromCoords(coords);
   setDeliveryMarker(coords);
   deliveryMap.setView([coords.lat, coords.lng], Math.max(deliveryMap.getZoom(), 15));
-  await tryReverseGeocode(coords, "Ubicación seleccionada");
-  document.querySelector("#locationStatus").textContent = `Ubicación seleccionada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
+  await tryReverseGeocode(coords, "UbicaciÃ³n seleccionada");
+  document.querySelector("#locationStatus").textContent = `UbicaciÃ³n seleccionada. Distancia estimada: ${kilometers.toFixed(1)} km. EnvÃ­o: ${money(shipping)}.`;
 }
 
-async function tryReverseGeocode(coords, label = "Ubicación actual") {
+async function tryReverseGeocode(coords, label = "UbicaciÃ³n actual") {
   const addressInput = document.querySelector("#customerAddress");
   const locationUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
   addressInput.value = `${label}: ${locationUrl}`;
@@ -446,16 +1207,16 @@ function useCurrentLocation() {
   const status = document.querySelector("#locationStatus");
 
   if (deliveryMode.value === "Otra persona") {
-    status.textContent = "Para otra persona, toca el mapa para elegir la ubicación de entrega.";
+    status.textContent = "Para otra persona, toca el mapa para elegir la ubicaciÃ³n de entrega.";
     return;
   }
 
   if (!navigator.geolocation) {
-    status.textContent = "Tu navegador no permite ubicación. Puedes llenar la dirección manualmente.";
+    status.textContent = "Tu navegador no permite ubicaciÃ³n. Puedes llenar la direcciÃ³n manualmente.";
     return;
   }
 
-  status.textContent = "Solicitando ubicación precisa...";
+  status.textContent = "Solicitando ubicaciÃ³n precisa...";
   navigator.geolocation.getCurrentPosition(async (position) => {
     const coords = {
       lat: position.coords.latitude,
@@ -465,9 +1226,9 @@ function useCurrentLocation() {
     const kilometers = updateShippingFromCoords(coords);
     setDeliveryMarker(coords);
     await tryReverseGeocode(coords);
-    status.textContent = `Ubicación tomada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
+    status.textContent = `UbicaciÃ³n tomada. Distancia estimada: ${kilometers.toFixed(1)} km. EnvÃ­o: ${money(shipping)}.`;
   }, () => {
-    status.textContent = "No se pudo tomar la ubicación. Puedes llenar la dirección manualmente.";
+    status.textContent = "No se pudo tomar la ubicaciÃ³n. Puedes llenar la direcciÃ³n manualmente.";
   }, {
     enableHighAccuracy: true,
     timeout: 20000,
@@ -497,17 +1258,17 @@ function validateOrder() {
   }
 
   if (!isTenDigitPhone(phone)) {
-    showToast("El teléfono debe tener exactamente 10 dígitos.");
+    showToast("El telÃ©fono debe tener exactamente 10 dÃ­gitos.");
     return false;
   }
 
   if (!address) {
-    showToast("Selecciona o escribe una dirección.");
+    showToast("Selecciona o escribe una direcciÃ³n.");
     return false;
   }
 
   if (mode !== "Otra persona" && !customerCoords) {
-    showToast("Usa tu ubicación actual para calcular el envío.");
+    showToast("Usa tu ubicaciÃ³n actual para calcular el envÃ­o.");
     return false;
   }
 
@@ -517,7 +1278,7 @@ function validateOrder() {
   }
 
   if (mode === "Otra persona" && (!recipientName || !isTenDigitPhone(recipientPhone))) {
-    showToast("Escribe nombre y teléfono de 10 dígitos de quien recibe.");
+    showToast("Escribe nombre y telÃ©fono de 10 dÃ­gitos de quien recibe.");
     return false;
   }
 
@@ -531,12 +1292,12 @@ function validateOrder() {
     return false;
   }
 
-  if (advanceProduct.value === "Sí" && (!advanceDate.value || !advanceTime.value)) {
-    showToast("Selecciona día y horario del anticipo.");
+  if (advanceProduct.value === "SÃ­" && (!advanceDate.value || !advanceTime.value)) {
+    showToast("Selecciona dÃ­a y horario del anticipo.");
     return false;
   }
 
-  if (advanceProduct.value === "Sí" && !isTimeInDeliveryRange(advanceTime.value)) {
+  if (advanceProduct.value === "SÃ­" && !isTimeInDeliveryRange(advanceTime.value)) {
     showToast("El horario del anticipo debe estar entre 12:00 y 18:00.");
     return false;
   }
@@ -551,21 +1312,21 @@ function sendOrder() {
   const subtotal = getSubtotal();
   const total = subtotal + shipping;
   const name = document.querySelector("#customerName").value.trim();
-  const phone = document.querySelector("#customerPhone").value.trim() || "Sin teléfono";
+  const phone = document.querySelector("#customerPhone").value.trim() || "Sin telÃ©fono";
   const address = document.querySelector("#customerAddress").value.trim();
   const messageAddress = cleanAddressForMessage(address);
   const buildingType = document.querySelector("#buildingType").value;
   const addressDetails = document.querySelector("#addressDetails").value.trim() || "Sin especificaciones";
   const payment = document.querySelector("#paymentMethod").value;
   const scheduleText = getDeliveryScheduleText();
-  const advanceLine = advanceProduct.value === "Sí"
-    ? [`*Anticipo de producto:* Sí`, `*Día del anticipo:* ${advanceDate.value}`, `*Horario del anticipo:* ${advanceTime.value}`]
+  const advanceLine = advanceProduct.value === "SÃ­"
+    ? [`*Anticipo de producto:* SÃ­`, `*DÃ­a del anticipo:* ${advanceDate.value}`, `*Horario del anticipo:* ${advanceTime.value}`]
     : ["*Anticipo de producto:* No"];
   const mode = document.querySelector("#deliveryMode").value;
   const recipientName = document.querySelector("#recipientName").value.trim();
   const recipientPhone = document.querySelector("#recipientPhone").value.trim();
   const recipientLine = mode === "Otra persona"
-    ? [`*Entrega para:* Otra persona`, `*Recibe:* ${recipientName}`, `*Teléfono de quien recibe:* ${recipientPhone}`]
+    ? [`*Entrega para:* Otra persona`, `*Recibe:* ${recipientName}`, `*TelÃ©fono de quien recibe:* ${recipientPhone}`]
     : ["*Entrega para:* Yo recibo el pedido"];
   const locationLine = getPreciseLocationLine();
   const items = rows
@@ -578,13 +1339,13 @@ function sendOrder() {
     items,
     "",
     `*Subtotal productos:* ${money(subtotal)}`,
-    `*Envío estimado:* ${money(shipping)}`,
+    `*EnvÃ­o estimado:* ${money(shipping)}`,
     `*Total estimado:* ${money(total)}`,
     "",
     `*Nombre:* ${name}`,
-    `*Teléfono:* ${phone}`,
+    `*TelÃ©fono:* ${phone}`,
     ...recipientLine,
-    `*Dirección exacta:* ${messageAddress}`,
+    `*DirecciÃ³n exacta:* ${messageAddress}`,
     `*Tipo de edificio:* ${buildingType}`,
     `*Especificaciones:* ${addressDetails}`,
     `*Horario de entrega:* ${scheduleText}`,
@@ -592,8 +1353,34 @@ function sendOrder() {
     locationLine,
     "",
     `*Forma de pago:* ${payment}`,
-    "Si pago por transferencia, enviaré el comprobante por WhatsApp."
+    "Si pago por transferencia, enviarÃ© el comprobante por WhatsApp."
   ].join("\n");
+
+  saveWebOrder({
+    id: Date.now(),
+    date: new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+    customer: name,
+    phone,
+    recipient: mode === "Otra persona" ? recipientName : name,
+    address: messageAddress,
+    buildingType,
+    addressDetails,
+    payment,
+    schedule: scheduleText,
+    status: "Pendiente",
+    coords: customerCoords ? {
+      lat: customerCoords.lat,
+      lng: customerCoords.lng
+    } : null,
+    shipping,
+    subtotal,
+    total,
+    items: rows.map((row) => ({
+      name: row.name,
+      quantity: row.quantity,
+      subtotal: row.subtotal
+    }))
+  });
 
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noreferrer");
 }
@@ -624,6 +1411,49 @@ cartItems.addEventListener("click", (event) => {
   if (dec) changeQuantity(dec.dataset.dec, -1);
 });
 
+document.querySelector("#openAdmin").addEventListener("click", openAdmin);
+document.querySelector("#closeAdmin").addEventListener("click", closeAdmin);
+document.querySelector("#adminLoginButton").addEventListener("click", loginAdmin);
+document.querySelector("#adminLogout").addEventListener("click", logoutAdmin);
+document.querySelector("#clearPos").addEventListener("click", clearPosSale);
+document.querySelector("#clearOrders").addEventListener("click", clearWebOrders);
+document.querySelector("#saveProductEdit").addEventListener("click", saveProductEdit);
+document.querySelector("#resetProductEdits").addEventListener("click", resetProductEdits);
+document.querySelector("#newProductButton").addEventListener("click", startNewProduct);
+editProduct.addEventListener("change", () => loadProductEditor(editProduct.value));
+editProductUpload.addEventListener("change", () => previewUploadedProductImage(editProductUpload.files[0]));
+adminProductCards.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-edit-product]");
+  if (!button) return;
+  editProduct.dataset.mode = "";
+  loadProductEditor(button.dataset.editProduct);
+  showToast("Producto listo para editar.");
+});
+document.querySelector("#adminTabs").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-admin-view]");
+  if (button) switchAdminView(button.dataset.adminView);
+});
+adminPassword.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") loginAdmin();
+});
+adminOrdersElement.addEventListener("click", (event) => {
+  const openButton = event.target.closest("[data-open-order]");
+  const routeButton = event.target.closest("[data-route-order]");
+  const arrivedButton = event.target.closest("[data-arrived-order]");
+  const deliverButton = event.target.closest("[data-deliver-order]");
+
+  if (openButton) {
+    const id = Number(openButton.dataset.openOrder);
+    activeOrderId = activeOrderId === id ? null : id;
+    renderAdminOrders();
+  }
+  if (routeButton) openDeliveryRoute(routeButton.dataset.routeOrder);
+  if (arrivedButton) checkDeliveryArrival(arrivedButton.dataset.arrivedOrder);
+  if (deliverButton) markOrderDelivered(deliverButton.dataset.deliverOrder);
+});
+adminDrawer.addEventListener("click", (event) => {
+  if (event.target === adminDrawer) closeAdmin();
+});
 document.querySelector("#openCart").addEventListener("click", openCart);
 document.querySelector("#closeCart").addEventListener("click", closeCart);
 document.querySelector("#sendOrder").addEventListener("click", sendOrder);
@@ -642,7 +1472,7 @@ deliverySchedule.addEventListener("change", () => {
 });
 
 advanceProduct.addEventListener("change", () => {
-  advanceFields.hidden = advanceProduct.value !== "Sí";
+  advanceFields.hidden = advanceProduct.value !== "SÃ­";
 });
 
 deliveryMode.addEventListener("change", () => {
@@ -656,8 +1486,8 @@ deliveryMode.addEventListener("change", () => {
   }
 
   document.querySelector("#locationStatus").textContent = isOtherPerson
-    ? "Toca el mapa para elegir la ubicación de entrega o escribe la dirección."
-    : "Usa tu ubicación actual para calcular el envío.";
+    ? "Toca el mapa para elegir la ubicaciÃ³n de entrega o escribe la direcciÃ³n."
+    : "Usa tu ubicaciÃ³n actual para calcular el envÃ­o.";
 });
 
 cartDrawer.addEventListener("click", (event) => {
@@ -691,3 +1521,5 @@ document.querySelector("#welcomeScreen").addEventListener("animationend", (event
 
 renderProducts();
 renderCart();
+setupInstallableApp();
+

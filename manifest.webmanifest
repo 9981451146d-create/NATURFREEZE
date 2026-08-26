@@ -1,0 +1,25 @@
+{
+  "name": "NaturFreeze Cancun",
+  "short_name": "NaturFreeze",
+  "description": "Tienda y panel de entregas NaturFreeze Cancun.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7fafc",
+  "theme_color": "#101923",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/logo-naturfreeze-mark.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo-naturfreeze.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
