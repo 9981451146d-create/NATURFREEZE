@@ -192,7 +192,6 @@ let adminRouteMap = null;
 let adminRouteUserMarker = null;
 let adminRouteDestMarker = null;
 let adminRouteLine = null;
-let adminRouteAccuracyCircle = null;
 let adminRouteDestMarkers = [];
 let adminRouteWatchId = null;
 let adminRouteRequesting = false;
@@ -655,10 +654,21 @@ function renderScheduleDetail(schedule, orders) {
         <div class="admin-navigation">
           <div class="admin-route-map" id="adminRouteMap" aria-label="Mapa interno de entrega"></div>
           <div class="route-steps-card" id="routeStepsCard">
-            <span class="route-steps-label">Navegación paso a paso</span>
+            <span class="route-turn-icon" aria-hidden="true"></span>
             <strong id="nextRouteInstruction">Esperando ruta...</strong>
             <small id="nextRouteDistance">Cuando cargue la ruta aparecerán los metros.</small>
             <div class="route-step-progress" id="routeStepProgress">Paso 0 de 0</div>
+          </div>
+          <div class="route-speed-pill" id="routeSpeedPill">
+            <strong id="routeSpeed">0</strong>
+            <span>km/h</span>
+          </div>
+          <div class="route-bottom-sheet">
+            <div>
+              <strong id="routeEta">Calculando...</strong>
+              <span id="routeDestinationText">Entrega NaturFreeze</span>
+            </div>
+            <button class="copy-button" type="button" data-route-view="overview">Mapa</button>
           </div>
         </div>
       </div>
@@ -725,7 +735,8 @@ function openDeliveryRouteForSchedule(schedule) {
         lat: position.coords.latitude,
         lng: position.coords.longitude,
         accuracy: position.coords.accuracy,
-        heading: position.coords.heading
+        heading: position.coords.heading,
+        speed: position.coords.speed
       };
       renderAdminRouteMap(routeOrder, current);
     },
@@ -751,7 +762,6 @@ function resetAdminRouteMap() {
   adminRouteDestMarker = null;
   adminRouteDestMarkers = [];
   adminRouteLine = null;
-  adminRouteAccuracyCircle = null;
   adminRouteRequesting = false;
   adminRouteLoadedFor = null;
   adminRouteSummary = null;
@@ -775,6 +785,33 @@ function formatStepDistance(meters) {
   if (!Number.isFinite(meters)) return "";
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(1)} km`;
+}
+
+function formatRouteEta(summary) {
+  if (!summary) return "Calculando...";
+  const kilometers = summary.distance / 1000;
+  const minutes = Math.max(1, Math.round(summary.duration / 60));
+  return `${minutes} min ${kilometers.toFixed(1)} km`;
+}
+
+function updateRouteBottomSheet(order, current, destination) {
+  const speedText = document.querySelector("#routeSpeed");
+  const etaText = document.querySelector("#routeEta");
+  const destinationText = document.querySelector("#routeDestinationText");
+  const speedKmh = Number.isFinite(current.speed) ? Math.max(0, Math.round(current.speed * 3.6)) : 0;
+
+  if (speedText) speedText.textContent = speedKmh;
+
+  if (etaText) {
+    etaText.textContent = adminRouteSummary
+      ? formatRouteEta(adminRouteSummary)
+      : destination ? getRouteEstimate(distanceKm(current, destination)) : "Sin destino";
+  }
+
+  if (destinationText) {
+    const firstStop = order.routeStops?.[0];
+    destinationText.textContent = firstStop?.address || order.address || "Entrega NaturFreeze";
+  }
 }
 
 function pointToCoords(point) {
@@ -868,7 +905,7 @@ async function fetchOpenRouteGeometry(current, destinations) {
   });
 
   if (!response.ok) {
-    throw new Error(`OpenRouteService ${response.status}`);
+    throw new Error(`No se pudo calcular ruta: ${response.status}`);
   }
 
   const data = await response.json();
@@ -899,15 +936,15 @@ function renderAdminRouteMap(order, current) {
 
   const destinations = getRouteDestinations(order);
   const destination = destinations[0] || null;
-  const accuracyText = current.accuracy ? ` Precision aprox.: ${Math.round(current.accuracy)} m.` : "";
+  updateRouteBottomSheet(order, current, destination);
   if (destination) {
     const kilometers = distanceKm(current, destination);
     const routeText = adminRouteSummary
       ? `Ruta por calles: ${formatRouteSummary(adminRouteSummary.distance, adminRouteSummary.duration)}`
       : `Calculando ruta por calles... Aproximado: ${getRouteEstimate(kilometers)}`;
-    if (routeStatus) routeStatus.textContent = `En vivo: ${routeText}. ${destinations.length} entrega(s) a las ${order.schedule}.${accuracyText}`;
+    if (routeStatus) routeStatus.textContent = `${routeText}. ${destinations.length} entrega(s) a las ${order.schedule}.`;
   } else if (routeStatus) {
-    routeStatus.textContent = `En vivo: tu ubicacion actual ya aparece. Este pedido no tiene coordenadas exactas guardadas.${accuracyText}`;
+    routeStatus.textContent = "Tu ubicacion actual ya aparece. Este pedido no tiene coordenadas exactas guardadas.";
   }
 
   if (!adminRouteMap) {
@@ -933,19 +970,6 @@ function renderAdminRouteMap(order, current) {
   }
   rotateDriverMarker(current.heading);
 
-  if (!adminRouteAccuracyCircle) {
-    adminRouteAccuracyCircle = L.circle(currentPoint, {
-    radius: current.accuracy || 40,
-      color: "#1d6df2",
-      fillColor: "#1d6df2",
-      fillOpacity: .10,
-      weight: 2
-    }).addTo(adminRouteMap);
-  } else {
-    adminRouteAccuracyCircle.setLatLng(currentPoint);
-    adminRouteAccuracyCircle.setRadius(current.accuracy || 40);
-  }
-
   updateActiveRouteStep(current);
 
   if (!destination) {
@@ -966,8 +990,8 @@ function renderAdminRouteMap(order, current) {
   const fallbackLinePoints = [currentPoint, ...destinations.map((stop) => [stop.lat, stop.lng])];
   if (!adminRouteLine) {
     adminRouteLine = L.polyline(fallbackLinePoints, {
-      color: "#7fd733",
-      weight: 6,
+      color: "#4169ff",
+      weight: 8,
       opacity: .9,
       dashArray: "8 8"
     }).addTo(adminRouteMap);
@@ -998,8 +1022,8 @@ async function loadOpenRouteLine(order, current, destinations) {
     if (!adminRouteMap) return;
     adminRouteLine.setLatLngs(route.points);
     adminRouteLine.setStyle({
-      color: "#7fd733",
-      weight: 7,
+      color: "#4169ff",
+      weight: 9,
       opacity: .95,
       dashArray: ""
     });

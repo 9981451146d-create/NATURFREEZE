@@ -1550,11 +1550,11 @@ textarea {
   display: grid;
   gap: 12px;
   margin-top: 10px;
-  padding: 14px;
-  background: #edf5ff;
+  padding: 10px;
+  background: #f4faff;
   border: 1px solid #d7e7f5;
-  border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(5, 31, 58, .12);
+  border-radius: 14px;
+  box-shadow: 0 14px 30px rgba(5, 31, 58, .10);
 }
 
 .admin-route-card[hidden] {
@@ -1596,12 +1596,12 @@ textarea {
 
 .admin-route-map {
   width: 100%;
-  min-height: 560px;
+  min-height: 640px;
   overflow: hidden;
-  border: 1px solid #d9e8ef;
-  border-radius: 18px;
-  background: #f7fafc;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .85);
+  border: 0;
+  border-radius: 22px;
+  background: #eef4fb;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .9);
 }
 
 .admin-navigation {
@@ -1613,36 +1613,53 @@ textarea {
   position: absolute;
   top: 18px;
   left: 18px;
-  right: 18px;
   z-index: 500;
   display: grid;
-  align-content: start;
-  gap: 8px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 14px;
+  width: min(620px, calc(100% - 36px));
   max-width: 620px;
-  padding: 22px 24px;
-  background: rgba(8, 12, 17, .92);
-  border-radius: 24px;
-  box-shadow: 0 18px 50px rgba(5, 31, 58, .28);
+  min-height: 150px;
+  padding: 18px 20px;
+  background: rgba(8, 12, 17, .90);
+  border-radius: 20px;
+  box-shadow: 0 18px 42px rgba(5, 31, 58, .28);
   backdrop-filter: blur(8px);
 }
 
-.route-steps-label {
-  color: #8ee246;
-  font-size: 12px;
-  font-weight: 900;
-  text-transform: uppercase;
+.route-turn-icon {
+  grid-row: 1 / span 3;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 10px solid rgba(255, 255, 255, .36);
+  border-right-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-35deg);
+}
+
+.route-turn-icon::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-right: 12px solid transparent;
+  border-bottom: 28px solid white;
+  border-left: 12px solid transparent;
+  transform: translateY(-22px) rotate(35deg);
 }
 
 .route-steps-card > strong {
   color: white;
-  font-size: clamp(30px, 5vw, 58px);
-  line-height: 1.15;
+  font-size: clamp(26px, 4vw, 42px);
+  line-height: 1.05;
 }
 
 .route-steps-card > small {
   color: #c8d1da;
-  font-size: clamp(20px, 3vw, 34px);
-  font-weight: 900;
+  font-size: clamp(18px, 2.4vw, 27px);
+  font-weight: 800;
 }
 
 .route-step-progress {
@@ -1657,6 +1674,70 @@ textarea {
   font-weight: 900;
   background: #8ee246;
   border-radius: 999px;
+}
+
+.route-speed-pill {
+  position: absolute;
+  left: 18px;
+  bottom: 158px;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  color: #59636f;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 14px 34px rgba(5, 31, 58, .18);
+}
+
+.route-speed-pill strong {
+  color: #101923;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.route-speed-pill span {
+  margin-top: -10px;
+  color: #59636f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.route-bottom-sheet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 132px;
+  padding: 28px 32px;
+  background: white;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -14px 34px rgba(5, 31, 58, .12);
+}
+
+.route-bottom-sheet strong {
+  display: block;
+  color: #050b12;
+  font-size: clamp(34px, 4vw, 50px);
+  line-height: 1;
+}
+
+.route-bottom-sheet span {
+  display: block;
+  max-width: 680px;
+  margin-top: 10px;
+  overflow: hidden;
+  color: #6c7178;
+  font-size: 22px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .schedule-card {
@@ -1747,10 +1828,10 @@ textarea {
 .route-marker::before {
   content: "";
   position: absolute;
-  inset: 5px;
+  inset: 7px;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 12px 30px rgba(5, 31, 58, .22);
+  box-shadow: 0 10px 24px rgba(5, 31, 58, .18);
 }
 
 .route-marker span {
@@ -1768,7 +1849,7 @@ textarea {
 }
 
 .route-marker-driver::before {
-  inset: 2px;
+  inset: 7px;
 }
 
 .route-marker-driver span {
@@ -1776,10 +1857,10 @@ textarea {
   height: 0;
   background: transparent;
   border-right: 14px solid transparent;
-  border-bottom: 34px solid #1d6df2;
+  border-bottom: 34px solid #3277ff;
   border-left: 14px solid transparent;
   border-radius: 4px;
-  filter: drop-shadow(0 8px 12px rgba(29, 109, 242, .35));
+  filter: drop-shadow(0 8px 12px rgba(50, 119, 255, .35));
   transform: translateY(-4px);
 }
 
@@ -1790,7 +1871,7 @@ textarea {
   bottom: -28px;
   width: 10px;
   height: 10px;
-  background: #1d6df2;
+  background: #3277ff;
   border-radius: 50%;
 }
 
@@ -1963,6 +2044,8 @@ textarea {
 
   .admin-route-card {
     margin: 8px -6px 0;
+    padding: 6px;
+    border-radius: 12px;
   }
 
   .admin-navigation {
@@ -1974,24 +2057,70 @@ textarea {
   }
 
   .admin-route-map {
-    min-height: 72vh;
-    border-radius: 18px;
+    min-height: 78vh;
+    border-radius: 22px;
   }
 
   .route-steps-card {
-    top: 14px;
-    right: 14px;
+    top: 16px;
+    right: auto;
     left: 14px;
-    padding: 18px;
-    border-radius: 20px;
+    grid-template-columns: 46px minmax(0, 1fr);
+    width: min(92%, 520px);
+    min-height: 116px;
+    padding: 14px 16px;
+    border-radius: 18px;
   }
 
   .route-steps-card > strong {
-    font-size: 42px;
+    font-size: clamp(25px, 8vw, 40px);
   }
 
   .route-steps-card > small {
-    font-size: 24px;
+    font-size: clamp(16px, 4.8vw, 22px);
+  }
+
+  .route-turn-icon {
+    width: 42px;
+    height: 42px;
+    border-width: 7px;
+  }
+
+  .route-turn-icon::before {
+    border-right-width: 9px;
+    border-bottom-width: 22px;
+    border-left-width: 9px;
+    transform: translateY(-17px) rotate(35deg);
+  }
+
+  .route-speed-pill {
+    left: 14px;
+    bottom: 128px;
+    width: 62px;
+    height: 62px;
+  }
+
+  .route-speed-pill strong {
+    font-size: 27px;
+  }
+
+  .route-speed-pill span {
+    font-size: 10px;
+  }
+
+  .route-bottom-sheet {
+    min-height: 112px;
+    padding: 22px 18px 24px;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .route-bottom-sheet strong {
+    font-size: clamp(30px, 8vw, 40px);
+  }
+
+  .route-bottom-sheet span {
+    max-width: 58vw;
+    font-size: 18px;
   }
 
   .schedule-card-head,
