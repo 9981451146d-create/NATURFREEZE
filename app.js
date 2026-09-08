@@ -4,6 +4,14 @@ const OPENROUTESERVICE_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLC
 const BASE_SHIPPING = 25;
 const INCLUDED_KM = 3;
 const PRICE_PER_EXTRA_KM = 10;
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDDO5y_xjbXFFOI_Adik9KAWCmumzTgMHM",
+  authDomain: "naturfreeze.firebaseapp.com",
+  projectId: "naturfreeze",
+  storageBucket: "naturfreeze.firebasestorage.app",
+  messagingSenderId: "1007695932173",
+  appId: "1:1007695932173:web:77e7e6e773a884c68fde44"
+};
 
 const products = [
   {
@@ -22,7 +30,7 @@ const products = [
     presentation: "1 kilo",
     price: 170,
     image: "assets/pollo-picoso.jpg",
-    detail: "100% pechuga de pollo, congelado IQF y alto en proteÃ­na."
+    detail: "100% pechuga de pollo, congelado IQF y alto en proteína."
   },
   {
     id: "berries",
@@ -67,7 +75,7 @@ const products = [
     presentation: "1 kilo",
     price: 126,
     image: "assets/nuggets.jpg",
-    detail: "PrÃ¡cticos, rendidores y listos para freÃ­r u hornear."
+    detail: "Prácticos, rendidores y listos para freír u hornear."
   },
   {
     id: "filete-pechuga",
@@ -85,7 +93,7 @@ const products = [
     presentation: "1 kilo",
     price: 170,
     image: "assets/boneless.jpg",
-    detail: "Carne blanca seleccionada, alta en proteÃ­na y congelada IQF."
+    detail: "Carne blanca seleccionada, alta en proteína y congelada IQF."
   },
   {
     id: "filete-empanizado",
@@ -94,7 +102,7 @@ const products = [
     presentation: "1 kilo",
     price: 184,
     image: "assets/filete-empanizado.jpg",
-    detail: "FÃ¡cil de preparar, ideal para freÃ­r, hornear o acompaÃ±ar comidas."
+    detail: "Fácil de preparar, ideal para freír, hornear o acompañar comidas."
   },
   {
     id: "aros-cebolla",
@@ -103,7 +111,7 @@ const products = [
     presentation: "1 kilo",
     price: 100,
     image: "assets/aros-cebolla.jpg",
-    detail: "Crujientes y rÃ¡pidos de preparar como entrada o snack."
+    detail: "Crujientes y rápidos de preparar como entrada o snack."
   }
 ];
 
@@ -113,6 +121,9 @@ const ORDERS_KEY = "naturfreezeAdminOrders";
 let productEdits = readStored(PRODUCT_EDITS_KEY, {});
 let customProducts = readStored(CUSTOM_PRODUCTS_KEY, []);
 let adminOrders = readStored(ORDERS_KEY, []);
+const defaultProducts = products.map((product) => ({ ...product }));
+let firestoreDb = null;
+let firebaseReady = false;
 
 products.push(...customProducts);
 applyStoredProductEdits();
@@ -126,6 +137,7 @@ let customerAccuracy = null;
 
 const productGrid = document.querySelector("#productGrid");
 const installAppButton = document.querySelector("#installApp");
+const payHereButton = document.querySelector("#payHere");
 const cartDrawer = document.querySelector("#cartDrawer");
 const cartItems = document.querySelector("#cartItems");
 const cartCount = document.querySelector("#cartCount");
@@ -168,6 +180,7 @@ const editProductImage = document.querySelector("#editProductImage");
 const editProductUpload = document.querySelector("#editProductUpload");
 const editProductDetail = document.querySelector("#editProductDetail");
 let activeOrderId = null;
+let activeRouteSchedule = null;
 let deferredInstallPrompt = null;
 
 let posCart = [];
@@ -180,12 +193,14 @@ let adminRouteUserMarker = null;
 let adminRouteDestMarker = null;
 let adminRouteLine = null;
 let adminRouteAccuracyCircle = null;
+let adminRouteDestMarkers = [];
 let adminRouteWatchId = null;
 let adminRouteRequesting = false;
 let adminRouteLoadedFor = null;
 let adminRouteSummary = null;
 let adminRouteSteps = [];
 let activeRouteStepIndex = 0;
+let adminRouteViewMode = "overview";
 
 function money(value) {
   return new Intl.NumberFormat("es-MX", {
@@ -205,6 +220,137 @@ function readStored(key, fallback) {
 
 function writeStored(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function setupFirebaseSync() {
+  if (!window.firebase?.initializeApp) {
+    showToast("Firebase no cargó. La página seguirá guardando en este navegador.");
+    return;
+  }
+
+  try {
+    window.firebase.initializeApp(FIREBASE_CONFIG);
+    firestoreDb = window.firebase.firestore();
+    firebaseReady = true;
+    seedProductsToFirebase();
+    subscribeFirebaseProducts();
+    subscribeFirebaseOrders();
+  } catch (error) {
+    console.warn("Firebase no pudo iniciar", error);
+    firebaseReady = false;
+  }
+}
+
+function subscribeFirebaseOrders() {
+  if (!firestoreDb) return;
+
+  firestoreDb.collection("orders")
+    .orderBy("createdAt", "desc")
+    .limit(80)
+    .onSnapshot((snapshot) => {
+      adminOrders = snapshot.docs.map((doc) => normalizeFirebaseOrder(doc.id, doc.data()));
+      writeStored(ORDERS_KEY, adminOrders);
+      renderAdminDashboard();
+    }, (error) => {
+      console.warn("No pude leer pedidos de Firebase", error);
+      showToast("Firebase pedidos no respondió. Uso respaldo local.");
+    });
+}
+
+function subscribeFirebaseProducts() {
+  if (!firestoreDb) return;
+
+  firestoreDb.collection("products")
+    .orderBy("name")
+    .onSnapshot((snapshot) => {
+      if (snapshot.empty) return;
+
+      const remoteProducts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const merged = new Map(defaultProducts.map((product) => [product.id, { ...product }]));
+      remoteProducts.forEach((product) => {
+        merged.set(product.id, {
+          id: product.id,
+          category: product.category || "general",
+          name: product.name || "Producto NaturFreeze",
+          price: Number(product.price) || 0,
+          presentation: product.presentation || "1 pieza",
+          image: product.image || "assets/logo-naturfreeze-mark.jpg",
+          detail: product.detail || "Producto NaturFreeze."
+        });
+      });
+
+      products.splice(0, products.length, ...Array.from(merged.values()));
+      renderProducts();
+      renderCart();
+      renderAdminDashboard();
+    }, (error) => {
+      console.warn("No pude leer productos de Firebase", error);
+    });
+}
+
+function normalizeFirebaseOrder(id, data) {
+  const createdDate = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now());
+  const deliveredDate = data.deliveredAt?.toDate ? data.deliveredAt.toDate() : null;
+  return {
+    ...data,
+    id,
+    date: data.date || createdDate.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+    deliveredAt: data.deliveredAtText || (deliveredDate ? deliveredDate.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }) : data.deliveredAt),
+    items: Array.isArray(data.items) ? data.items : [],
+    shipping: Number(data.shipping) || 0,
+    subtotal: Number(data.subtotal) || 0,
+    total: Number(data.total) || 0
+  };
+}
+
+function saveOrderToFirebase(order) {
+  if (!firestoreDb) return Promise.resolve(false);
+
+  const docId = String(order.id);
+  return firestoreDb.collection("orders").doc(docId).set({
+    ...order,
+    id: docId,
+    createdAt: window.firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).then(() => true).catch((error) => {
+    console.warn("No pude guardar pedido en Firebase", error);
+    showToast("Pedido enviado, pero Firebase no lo guardó. Revisa internet.");
+    return false;
+  });
+}
+
+function saveProductToFirebase(product) {
+  if (!firestoreDb) return Promise.resolve(false);
+
+  return firestoreDb.collection("products").doc(product.id).set({
+    ...product,
+    updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).then(() => true).catch((error) => {
+    console.warn("No pude guardar producto en Firebase", error);
+    showToast("Producto guardado localmente, pero Firebase no respondió.");
+    return false;
+  });
+}
+
+function updateOrderInFirebase(id, updates) {
+  if (!firestoreDb) return Promise.resolve(false);
+
+  return firestoreDb.collection("orders").doc(String(id)).set({
+    ...updates,
+    updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).then(() => true).catch((error) => {
+    console.warn("No pude actualizar pedido en Firebase", error);
+    return false;
+  });
+}
+
+function seedProductsToFirebase() {
+  if (!firestoreDb) return;
+  firestoreDb.collection("products").limit(1).get().then((snapshot) => {
+    if (!snapshot.empty) return;
+    defaultProducts.forEach((product) => saveProductToFirebase(product));
+  }).catch((error) => {
+    console.warn("No pude preparar productos iniciales", error);
+  });
 }
 
 function setupInstallableApp() {
@@ -273,18 +419,18 @@ function cleanAddressForMessage(address) {
     .split("\n")
     .filter((line) => !line.includes("google.com/maps"))
     .join("\n")
-    .replace(/UbicaciÃ³n actual:\s*/i, "")
-    .replace(/UbicaciÃ³n seleccionada:\s*/i, "")
-    .trim() || "Sin direcciÃ³n escrita";
+    .replace(/Ubicación actual:\s*/i, "")
+    .replace(/Ubicación seleccionada:\s*/i, "")
+    .trim() || "Sin dirección escrita";
 }
 
 function getPreciseLocationLine() {
-  if (!customerCoords) return "*UbicaciÃ³n exacta:* no enviada";
+  if (!customerCoords) return "*Ubicación exacta:* no enviada";
 
   const lat = formatCoord(customerCoords.lat);
   const lng = formatCoord(customerCoords.lng);
-  const accuracy = customerAccuracy ? ` | *PrecisiÃ³n aprox.:* Â±${Math.round(customerAccuracy)} m` : "";
-  return `*UbicaciÃ³n exacta:* https://www.google.com/maps?q=${lat},${lng} | *Coordenadas:* ${lat}, ${lng}${accuracy}`;
+  const accuracy = customerAccuracy ? ` | *Precisión aprox.:* ±${Math.round(customerAccuracy)} m` : "";
+  return `*Ubicación exacta:* https://www.google.com/maps?q=${lat},${lng} | *Coordenadas:* ${lat}, ${lng}${accuracy}`;
 }
 
 function isTimeInDeliveryRange(value) {
@@ -386,7 +532,10 @@ function renderPosSale() {
 
 function clearPosSale() {
   adminOrders = adminOrders.map((order) => {
-    if (order.status === "Entregado") return { ...order, saleCleared: true };
+    if (order.status === "Entregado") {
+      updateOrderInFirebase(order.id, { saleCleared: true });
+      return { ...order, saleCleared: true };
+    }
     return order;
   });
   writeStored(ORDERS_KEY, adminOrders);
@@ -424,66 +573,103 @@ function switchAdminView(view) {
 function saveWebOrder(order) {
   adminOrders = [order, ...adminOrders].slice(0, 30);
   writeStored(ORDERS_KEY, adminOrders);
+  saveOrderToFirebase(order);
   renderAdminDashboard();
 }
 
 function renderAdminOrders() {
   if (!adminOrdersElement) return;
 
-  if (!adminOrders.length) {
+  const pendingOrders = adminOrders.filter((order) => order.status !== "Entregado");
+  if (!pendingOrders.length) {
     adminOrdersElement.innerHTML = '<p class="cart-note">Aun no hay pedidos enviados desde esta pagina.</p>';
     renderAdminStats();
     return;
   }
 
-  adminOrdersElement.innerHTML = adminOrders.map((order) => `
-    <article class="admin-order-card ${activeOrderId === order.id ? "open" : ""}">
-      <div>
-        <h4>${order.customer} <span class="order-status">${order.status || "Pendiente"}</span></h4>
-        <p>${order.date} | ${order.phone} | ${order.payment}</p>
-        <p>${order.address}</p>
-        <p>${order.schedule} | Envio: ${money(order.shipping)}</p>
-        ${activeOrderId === order.id ? `
-          <div class="order-detail-panel">
-            <p><strong>Recibe:</strong> ${order.recipient || order.customer}</p>
-            <p><strong>Edificio:</strong> ${order.buildingType}</p>
-            <p><strong>Especificaciones:</strong> ${order.addressDetails}</p>
-            <ul>
-              ${order.items.map((item) => `<li>${item.quantity} x ${item.name} - ${money(item.subtotal)}</li>`).join("")}
-            </ul>
-            <div class="order-actions">
-              <button class="secondary-action" type="button" data-route-order="${order.id}">Ir a entrega</button>
-              <button class="copy-button" type="button" data-arrived-order="${order.id}">Estoy en la entrega</button>
-              <button class="add-button" type="button" data-deliver-order="${order.id}">Marcar entregado</button>
-            </div>
-            <div class="admin-route-card" id="adminRouteCard" hidden>
-              <div>
-                <strong>Ruta de entrega</strong>
-                <span id="adminRouteStatus">Pide tu ubicacion para iniciar.</span>
-              </div>
-              <div class="admin-navigation">
-                <div class="admin-route-map" id="adminRouteMap" aria-label="Mapa interno de entrega"></div>
-                <div class="route-steps-card" id="routeStepsCard">
-                  <span class="route-steps-label">Navegacion paso a paso</span>
-                  <strong id="nextRouteInstruction">Esperando ruta...</strong>
-                  <small id="nextRouteDistance">Cuando cargue la ruta apareceran los metros.</small>
-                  <div class="route-step-progress" id="routeStepProgress">Paso 0 de 0</div>
-                </div>
-              </div>
-            </div>
+  const schedules = ["2:00 pm", "6:00 pm"];
+  adminOrdersElement.innerHTML = schedules.map((schedule) => {
+    const orders = pendingOrders.filter((order) => order.schedule === schedule);
+    const total = orders.reduce((sum, order) => sum + order.total, 0);
+    const itemCount = orders.reduce((sum, order) => {
+      return sum + order.items.reduce((itemsSum, item) => itemsSum + item.quantity, 0);
+    }, 0);
+    const isOpen = activeRouteSchedule === schedule;
+
+    return `
+      <article class="schedule-card ${isOpen ? "open" : ""}">
+        <div class="schedule-card-head">
+          <div>
+            <span class="eyebrow">Ruta de reparto</span>
+            <h4>${schedule}</h4>
+            <p>${orders.length} pedido(s) | ${itemCount} producto(s)</p>
           </div>
-        ` : ""}
-      </div>
-      <div class="order-card-side">
-        <strong class="order-total-pill">${money(order.total)}</strong>
-        <button class="copy-button" type="button" data-open-order="${order.id}">${activeOrderId === order.id ? "Cerrar" : "Entrar"}</button>
-      </div>
-    </article>
-  `).join("");
+          <strong class="order-total-pill">${money(total)}</strong>
+        </div>
+        <button class="add-button full" type="button" data-open-schedule="${schedule}" ${orders.length ? "" : "disabled"}>
+          ${isOpen ? "Ocultar ruta" : "Entregar horario"}
+        </button>
+        ${isOpen ? renderScheduleDetail(schedule, orders) : ""}
+      </article>
+    `;
+  }).join("");
   renderAdminStats();
 }
 
+function renderScheduleDetail(schedule, orders) {
+  if (!orders.length) {
+    return '<div class="order-detail-panel"><p>No hay pedidos pendientes en este horario.</p></div>';
+  }
+
+  return `
+    <div class="order-detail-panel schedule-detail">
+      <div class="schedule-summary">
+        <strong>Pedidos para entregar a las ${schedule}</strong>
+        <span>Revisa la lista y confirma para abrir la navegación.</span>
+      </div>
+      ${orders.map((order, index) => `
+        <div class="schedule-order-line">
+          <span>${index + 1}</span>
+          <div>
+            <strong>${order.customer}</strong>
+            <p>${order.address}</p>
+            <small>${order.items.map((item) => `${item.quantity} x ${item.name}`).join(" | ")}</small>
+          </div>
+          <b>${money(order.total)}</b>
+        </div>
+      `).join("")}
+      <div class="order-actions">
+        <button class="secondary-action" type="button" data-confirm-schedule="${schedule}">Confirmar ruta</button>
+        <button class="copy-button" type="button" data-arrived-schedule="${schedule}">Estoy en la entrega</button>
+        <button class="add-button" type="button" data-deliver-schedule="${schedule}">Marcar horario entregado</button>
+      </div>
+      <div class="admin-route-card" id="adminRouteCard" hidden>
+        <div>
+          <strong>Ruta de entrega</strong>
+          <span id="adminRouteStatus">Confirma la ruta para iniciar.</span>
+        </div>
+        <div class="route-view-actions">
+          <button class="active" type="button" data-route-view="overview">Mapa completo</button>
+          <button type="button" data-route-view="close">Vista cercana</button>
+        </div>
+        <div class="admin-navigation">
+          <div class="admin-route-map" id="adminRouteMap" aria-label="Mapa interno de entrega"></div>
+          <div class="route-steps-card" id="routeStepsCard">
+            <span class="route-steps-label">Navegación paso a paso</span>
+            <strong id="nextRouteInstruction">Esperando ruta...</strong>
+            <small id="nextRouteDistance">Cuando cargue la ruta aparecerán los metros.</small>
+            <div class="route-step-progress" id="routeStepProgress">Paso 0 de 0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function clearWebOrders() {
+  adminOrders
+    .filter((order) => order.status !== "Entregado")
+    .forEach((order) => updateOrderInFirebase(order.id, { status: "Cancelado" }));
   adminOrders = adminOrders.filter((order) => order.status === "Entregado");
   writeStored(ORDERS_KEY, adminOrders);
   renderAdminOrders();
@@ -491,10 +677,32 @@ function clearWebOrders() {
 }
 
 function openDeliveryRoute(id) {
-  const order = adminOrders.find((item) => item.id === Number(id));
+  const order = adminOrders.find((item) => String(item.id) === String(id));
   if (!order) return;
+  openDeliveryRouteForSchedule(order.schedule);
+}
+
+function openDeliveryRouteForSchedule(schedule) {
+  const orders = adminOrders.filter((item) => item.status !== "Entregado" && item.schedule === schedule && item.coords);
+  if (!orders.length) {
+    showToast("No hay pedidos con ubicación exacta en este horario.");
+    return;
+  }
+  const order = orders[0];
+  const routeStops = adminOrders
+    .filter((item) => item.status !== "Entregado" && item.schedule === schedule && item.coords)
+    .map((item) => ({
+      id: item.id,
+      customer: item.customer,
+      address: item.address,
+      schedule: item.schedule,
+      total: item.total,
+      coords: item.coords
+    }));
+  const routeOrder = { ...order, routeStops };
 
   activeOrderId = order.id;
+  activeRouteSchedule = schedule;
   renderAdminOrders();
 
   const routeCard = document.querySelector("#adminRouteCard");
@@ -519,7 +727,7 @@ function openDeliveryRoute(id) {
         accuracy: position.coords.accuracy,
         heading: position.coords.heading
       };
-      renderAdminRouteMap(order, current);
+      renderAdminRouteMap(routeOrder, current);
     },
     () => {
       if (routeStatus) routeStatus.textContent = "No pude leer tu ubicacion actual.";
@@ -541,6 +749,7 @@ function resetAdminRouteMap() {
   adminRouteMap = null;
   adminRouteUserMarker = null;
   adminRouteDestMarker = null;
+  adminRouteDestMarkers = [];
   adminRouteLine = null;
   adminRouteAccuracyCircle = null;
   adminRouteRequesting = false;
@@ -548,6 +757,7 @@ function resetAdminRouteMap() {
   adminRouteSummary = null;
   adminRouteSteps = [];
   activeRouteStepIndex = 0;
+  adminRouteViewMode = "overview";
 }
 
 function getRouteEstimate(kilometers) {
@@ -599,8 +809,22 @@ function rotateDriverMarker(heading) {
   }
 }
 
-function makeRouteIcon(type) {
-  const label = type === "driver" ? "" : "Entrega";
+function setRouteViewMode(mode) {
+  adminRouteViewMode = mode;
+  document.querySelectorAll("[data-route-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.routeView === mode);
+  });
+
+  if (!adminRouteMap || !adminRouteUserMarker) return;
+  if (mode === "close") {
+    adminRouteMap.setView(adminRouteUserMarker.getLatLng(), 17);
+  } else if (adminRouteLine) {
+    adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
+  }
+}
+
+function makeRouteIcon(type, number = "") {
+  const label = type === "driver" ? "" : number;
   return L.divIcon({
     className: `route-marker route-marker-${type}`,
     html: `<span>${label}</span>`,
@@ -620,7 +844,13 @@ function enrichRouteSteps(steps, points) {
   });
 }
 
-async function fetchOpenRouteGeometry(current, destination) {
+function getRouteDestinations(order) {
+  if (order.routeStops?.length) return order.routeStops.map((stop) => stop.coords);
+  return order.coords ? [order.coords] : [];
+}
+
+async function fetchOpenRouteGeometry(current, destinations) {
+  const stops = Array.isArray(destinations) ? destinations : [destinations];
   const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
     method: "POST",
     headers: {
@@ -630,7 +860,7 @@ async function fetchOpenRouteGeometry(current, destination) {
     body: JSON.stringify({
       coordinates: [
         [current.lng, current.lat],
-        [destination.lng, destination.lat]
+        ...stops.map((destination) => [destination.lng, destination.lat])
       ],
       instructions: true,
       language: "es"
@@ -667,14 +897,15 @@ function renderAdminRouteMap(order, current) {
     return;
   }
 
-  const destination = order.coords;
+  const destinations = getRouteDestinations(order);
+  const destination = destinations[0] || null;
   const accuracyText = current.accuracy ? ` Precision aprox.: ${Math.round(current.accuracy)} m.` : "";
   if (destination) {
     const kilometers = distanceKm(current, destination);
     const routeText = adminRouteSummary
       ? `Ruta por calles: ${formatRouteSummary(adminRouteSummary.distance, adminRouteSummary.duration)}`
       : `Calculando ruta por calles... Aproximado: ${getRouteEstimate(kilometers)}`;
-    if (routeStatus) routeStatus.textContent = `En vivo: ${routeText}. Entrega: ${formatCoord(destination.lat)}, ${formatCoord(destination.lng)}.${accuracyText}`;
+    if (routeStatus) routeStatus.textContent = `En vivo: ${routeText}. ${destinations.length} entrega(s) a las ${order.schedule}.${accuracyText}`;
   } else if (routeStatus) {
     routeStatus.textContent = `En vivo: tu ubicacion actual ya aparece. Este pedido no tiene coordenadas exactas guardadas.${accuracyText}`;
   }
@@ -723,16 +954,16 @@ function renderAdminRouteMap(order, current) {
     return;
   }
 
-  const destinationPoint = [destination.lat, destination.lng];
-  if (!adminRouteDestMarker) {
-    adminRouteDestMarker = L.marker(destinationPoint, {
-      icon: makeRouteIcon("dropoff")
-    }).addTo(adminRouteMap).bindPopup(`Entrega: ${order.address}`);
-  } else {
-    adminRouteDestMarker.setLatLng(destinationPoint);
+  if (!adminRouteDestMarkers.length) {
+    adminRouteDestMarkers = (order.routeStops || [{ ...order, coords: destination }]).map((stop, index) => {
+      return L.marker([stop.coords.lat, stop.coords.lng], {
+        icon: makeRouteIcon("dropoff", index + 1)
+      }).addTo(adminRouteMap).bindPopup(`Entrega ${index + 1}: ${stop.customer}<br>${stop.address}`);
+    });
+    adminRouteDestMarker = adminRouteDestMarkers[0] || null;
   }
 
-  const fallbackLinePoints = [currentPoint, destinationPoint];
+  const fallbackLinePoints = [currentPoint, ...destinations.map((stop) => [stop.lat, stop.lng])];
   if (!adminRouteLine) {
     adminRouteLine = L.polyline(fallbackLinePoints, {
       color: "#7fd733",
@@ -743,19 +974,24 @@ function renderAdminRouteMap(order, current) {
   }
 
   if (!adminRouteLoadedFor && !adminRouteRequesting) {
-    loadOpenRouteLine(order, current, destination);
+    loadOpenRouteLine(order, current, destinations);
   }
 
-  adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
+  if (adminRouteViewMode === "close") {
+    adminRouteMap.setView(currentPoint, 17);
+  } else {
+    adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
+  }
   window.setTimeout(() => adminRouteMap.invalidateSize(), 120);
 }
 
-async function loadOpenRouteLine(order, current, destination) {
-  const routeKey = `${order.id}:${formatCoord(current.lat)},${formatCoord(current.lng)}:${formatCoord(destination.lat)},${formatCoord(destination.lng)}`;
+async function loadOpenRouteLine(order, current, destinations) {
+  const lastDestination = destinations[destinations.length - 1];
+  const routeKey = `${order.id}:${order.schedule}:${formatCoord(current.lat)},${formatCoord(current.lng)}:${destinations.length}:${formatCoord(lastDestination.lat)},${formatCoord(lastDestination.lng)}`;
   adminRouteRequesting = true;
 
   try {
-    const route = await fetchOpenRouteGeometry(current, destination);
+    const route = await fetchOpenRouteGeometry(current, destinations);
     adminRouteSummary = route.summary;
     adminRouteLoadedFor = routeKey;
 
@@ -771,7 +1007,7 @@ async function loadOpenRouteLine(order, current, destination) {
 
     const routeStatus = document.querySelector("#adminRouteStatus");
     if (routeStatus) {
-      routeStatus.textContent = `En vivo: Ruta por calles: ${formatRouteSummary(route.summary.distance, route.summary.duration)}. Entrega: ${formatCoord(destination.lat)}, ${formatCoord(destination.lng)}.`;
+      routeStatus.textContent = `En vivo: Ruta por calles: ${formatRouteSummary(route.summary.distance, route.summary.duration)}. ${destinations.length} entrega(s) a las ${order.schedule}.`;
     }
     adminRouteSteps = route.steps;
     activeRouteStepIndex = 0;
@@ -810,12 +1046,19 @@ function renderRouteInstructions(steps, activeIndex = 0, metersToNextStep = null
 }
 
 function markOrderDelivered(id, detected = false) {
+  const deliveredAt = new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
   adminOrders = adminOrders.map((order) => {
-    if (order.id !== Number(id)) return order;
+    if (String(order.id) !== String(id)) return order;
+    updateOrderInFirebase(order.id, {
+      status: "Entregado",
+      deliveredAtText: deliveredAt,
+      deliveredAt: window.firebase?.firestore?.FieldValue?.serverTimestamp?.() || deliveredAt,
+      deliveryDetected: detected
+    });
     return {
       ...order,
       status: "Entregado",
-      deliveredAt: new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      deliveredAt,
       deliveryDetected: detected
     };
   });
@@ -825,8 +1068,34 @@ function markOrderDelivered(id, detected = false) {
   showToast("Pedido entregado y agregado al punto de venta.");
 }
 
+function markScheduleDelivered(schedule, detected = false) {
+  const deliveredAt = new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
+  adminOrders = adminOrders.map((order) => {
+    if (order.schedule !== schedule || order.status === "Entregado") return order;
+    updateOrderInFirebase(order.id, {
+      status: "Entregado",
+      deliveredAtText: deliveredAt,
+      deliveredAt: window.firebase?.firestore?.FieldValue?.serverTimestamp?.() || deliveredAt,
+      deliveryDetected: detected
+    });
+    return {
+      ...order,
+      status: "Entregado",
+      deliveredAt,
+      deliveryDetected: detected
+    };
+  });
+  writeStored(ORDERS_KEY, adminOrders);
+  stopAdminRouteTracking();
+  resetAdminRouteMap();
+  activeRouteSchedule = null;
+  switchAdminView("pos");
+  renderAdminDashboard();
+  showToast(`Horario ${schedule} entregado y agregado al punto de venta.`);
+}
+
 function checkDeliveryArrival(id) {
-  const order = adminOrders.find((item) => item.id === Number(id));
+  const order = adminOrders.find((item) => String(item.id) === String(id));
   if (!order) return;
 
   if (!order.coords || !navigator.geolocation) {
@@ -845,6 +1114,31 @@ function checkDeliveryArrival(id) {
       }
     },
     () => showToast("No pude leer tu ubicacion actual."),
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
+}
+
+function checkScheduleArrival(schedule) {
+  const orders = adminOrders.filter((order) => order.status !== "Entregado" && order.schedule === schedule && order.coords);
+  if (!orders.length || !navigator.geolocation) {
+    showToast("No hay GPS suficiente para revisar este horario.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const current = { lat: position.coords.latitude, lng: position.coords.longitude };
+      const nearest = orders
+        .map((order) => ({ order, kilometers: distanceKm(current, order.coords) }))
+        .sort((a, b) => a.kilometers - b.kilometers)[0];
+
+      if (nearest.kilometers <= 0.18) {
+        markOrderDelivered(nearest.order.id, true);
+      } else {
+        showToast(`La entrega más cercana está a ${nearest.kilometers.toFixed(2)} km.`);
+      }
+    },
+    () => showToast("No pude leer tu ubicación actual."),
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
   );
 }
@@ -897,6 +1191,7 @@ function saveProductEdit() {
     products.push(product);
     customProducts.push(product);
     writeStored(CUSTOM_PRODUCTS_KEY, customProducts);
+    saveProductToFirebase(product);
     editProduct.dataset.mode = "";
     renderAdminProducts();
     loadProductEditor(product.id);
@@ -916,6 +1211,7 @@ function saveProductEdit() {
 
   customProducts = customProducts.map((item) => item.id === product.id ? product : item);
   writeStored(CUSTOM_PRODUCTS_KEY, customProducts);
+  saveProductToFirebase(product);
 
   renderProducts();
   renderCart();
@@ -974,7 +1270,7 @@ function renderProducts() {
   const visibleProducts = getFilteredProducts();
 
   if (!visibleProducts.length) {
-    productGrid.innerHTML = "<p class=\"empty-state\">No encontramos productos con esa bÃºsqueda.</p>";
+    productGrid.innerHTML = "<p class=\"empty-state\">No encontramos productos con esa búsqueda.</p>";
     return;
   }
 
@@ -1027,10 +1323,10 @@ function renderCart() {
   cartSubtotal.textContent = money(subtotal);
   shippingTotal.textContent = rows.length ? money(shipping) : money(0);
   cartTotal.textContent = money(total);
-  deliveryPreview.textContent = "SegÃºn distancia";
+  deliveryPreview.textContent = "Según distancia";
 
   if (!rows.length) {
-    cartItems.innerHTML = "<p class=\"cart-note\">Tu pedido estÃ¡ vacÃ­o.</p>";
+    cartItems.innerHTML = "<p class=\"cart-note\">Tu pedido está vacío.</p>";
     renderProducts();
     return;
   }
@@ -1072,7 +1368,7 @@ function changeQuantity(id, amount) {
 function openCart() {
   cartDrawer.classList.add("open");
   cartDrawer.setAttribute("aria-hidden", "false");
-  if (deliveryMode.value === "Otra persona") initDeliveryMap();
+  initDeliveryMap();
 }
 
 function closeCart() {
@@ -1121,13 +1417,13 @@ function updateShippingFromAddressText() {
 
   const kilometers = updateShippingFromCoords(coords);
   setDeliveryMarker(coords);
-  document.querySelector("#locationStatus").textContent = `UbicaciÃ³n detectada. Distancia estimada: ${kilometers.toFixed(1)} km. EnvÃ­o: ${money(shipping)}.`;
+  document.querySelector("#locationStatus").textContent = `Ubicación detectada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
 }
 
 function initDeliveryMap() {
   if (!deliveryMapElement || typeof L === "undefined") {
     if (deliveryMapElement) {
-      deliveryMapElement.innerHTML = "<p>El mapa no pudo cargar. Puedes escribir la direcciÃ³n o pegar un enlace de ubicaciÃ³n.</p>";
+      deliveryMapElement.innerHTML = "<p>El mapa no pudo cargar. Puedes escribir la dirección o pegar un enlace de ubicación.</p>";
     }
     return;
   }
@@ -1142,9 +1438,9 @@ function initDeliveryMap() {
     scrollWheelZoom: false
   }).setView([STORE_LOCATION.lat, STORE_LOCATION.lng], 13);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap"
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    maxZoom: 20,
+    attribution: "&copy; OpenStreetMap &copy; CARTO"
   }).addTo(deliveryMap);
 
   storeMarker = L.marker([STORE_LOCATION.lat, STORE_LOCATION.lng]).addTo(deliveryMap);
@@ -1175,18 +1471,18 @@ function setDeliveryMarker(coords) {
     deliveryMarker.setLatLng(position);
   }
 
-  deliveryMarker.bindPopup("UbicaciÃ³n de entrega").openPopup();
+  deliveryMarker.bindPopup("Ubicación de entrega").openPopup();
 }
 
 async function selectDeliveryCoords(coords) {
   const kilometers = updateShippingFromCoords(coords);
   setDeliveryMarker(coords);
   deliveryMap.setView([coords.lat, coords.lng], Math.max(deliveryMap.getZoom(), 15));
-  await tryReverseGeocode(coords, "UbicaciÃ³n seleccionada");
-  document.querySelector("#locationStatus").textContent = `UbicaciÃ³n seleccionada. Distancia estimada: ${kilometers.toFixed(1)} km. EnvÃ­o: ${money(shipping)}.`;
+  await tryReverseGeocode(coords, "Ubicación seleccionada");
+  document.querySelector("#locationStatus").textContent = `Ubicación seleccionada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
 }
 
-async function tryReverseGeocode(coords, label = "UbicaciÃ³n actual") {
+async function tryReverseGeocode(coords, label = "Ubicación actual") {
   const addressInput = document.querySelector("#customerAddress");
   const locationUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
   addressInput.value = `${label}: ${locationUrl}`;
@@ -1206,17 +1502,12 @@ async function tryReverseGeocode(coords, label = "UbicaciÃ³n actual") {
 function useCurrentLocation() {
   const status = document.querySelector("#locationStatus");
 
-  if (deliveryMode.value === "Otra persona") {
-    status.textContent = "Para otra persona, toca el mapa para elegir la ubicaciÃ³n de entrega.";
-    return;
-  }
-
   if (!navigator.geolocation) {
-    status.textContent = "Tu navegador no permite ubicaciÃ³n. Puedes llenar la direcciÃ³n manualmente.";
+    status.textContent = "Tu navegador no permite ubicación. Toca el punto exacto en el mapa.";
     return;
   }
 
-  status.textContent = "Solicitando ubicaciÃ³n precisa...";
+  status.textContent = "Solicitando ubicación precisa...";
   navigator.geolocation.getCurrentPosition(async (position) => {
     const coords = {
       lat: position.coords.latitude,
@@ -1226,9 +1517,9 @@ function useCurrentLocation() {
     const kilometers = updateShippingFromCoords(coords);
     setDeliveryMarker(coords);
     await tryReverseGeocode(coords);
-    status.textContent = `UbicaciÃ³n tomada. Distancia estimada: ${kilometers.toFixed(1)} km. EnvÃ­o: ${money(shipping)}.`;
+    status.textContent = `Ubicación tomada. Distancia estimada: ${kilometers.toFixed(1)} km. Envío: ${money(shipping)}.`;
   }, () => {
-    status.textContent = "No se pudo tomar la ubicaciÃ³n. Puedes llenar la direcciÃ³n manualmente.";
+    status.textContent = "No se pudo tomar la ubicación. Toca el punto exacto en el mapa.";
   }, {
     enableHighAccuracy: true,
     timeout: 20000,
@@ -1258,17 +1549,17 @@ function validateOrder() {
   }
 
   if (!isTenDigitPhone(phone)) {
-    showToast("El telÃ©fono debe tener exactamente 10 dÃ­gitos.");
+    showToast("El teléfono debe tener exactamente 10 dígitos.");
     return false;
   }
 
   if (!address) {
-    showToast("Selecciona o escribe una direcciÃ³n.");
+    showToast("Escribe una referencia de dirección.");
     return false;
   }
 
-  if (mode !== "Otra persona" && !customerCoords) {
-    showToast("Usa tu ubicaciÃ³n actual para calcular el envÃ­o.");
+  if (!customerCoords) {
+    showToast("Elige el punto exacto de entrega en el mapa.");
     return false;
   }
 
@@ -1278,27 +1569,12 @@ function validateOrder() {
   }
 
   if (mode === "Otra persona" && (!recipientName || !isTenDigitPhone(recipientPhone))) {
-    showToast("Escribe nombre y telÃ©fono de 10 dÃ­gitos de quien recibe.");
+    showToast("Escribe nombre y teléfono de 10 dígitos de quien recibe.");
     return false;
   }
 
   if (!scheduleText) {
     showToast("Selecciona el horario de entrega.");
-    return false;
-  }
-
-  if (deliverySchedule.value === "Personalizado" && !isTimeInDeliveryRange(customDeliveryTime.value)) {
-    showToast("El horario personalizado debe estar entre 12:00 y 18:00.");
-    return false;
-  }
-
-  if (advanceProduct.value === "SÃ­" && (!advanceDate.value || !advanceTime.value)) {
-    showToast("Selecciona dÃ­a y horario del anticipo.");
-    return false;
-  }
-
-  if (advanceProduct.value === "SÃ­" && !isTimeInDeliveryRange(advanceTime.value)) {
-    showToast("El horario del anticipo debe estar entre 12:00 y 18:00.");
     return false;
   }
 
@@ -1312,21 +1588,18 @@ function sendOrder() {
   const subtotal = getSubtotal();
   const total = subtotal + shipping;
   const name = document.querySelector("#customerName").value.trim();
-  const phone = document.querySelector("#customerPhone").value.trim() || "Sin telÃ©fono";
+  const phone = document.querySelector("#customerPhone").value.trim() || "Sin teléfono";
   const address = document.querySelector("#customerAddress").value.trim();
   const messageAddress = cleanAddressForMessage(address);
   const buildingType = document.querySelector("#buildingType").value;
   const addressDetails = document.querySelector("#addressDetails").value.trim() || "Sin especificaciones";
   const payment = document.querySelector("#paymentMethod").value;
   const scheduleText = getDeliveryScheduleText();
-  const advanceLine = advanceProduct.value === "SÃ­"
-    ? [`*Anticipo de producto:* SÃ­`, `*DÃ­a del anticipo:* ${advanceDate.value}`, `*Horario del anticipo:* ${advanceTime.value}`]
-    : ["*Anticipo de producto:* No"];
   const mode = document.querySelector("#deliveryMode").value;
   const recipientName = document.querySelector("#recipientName").value.trim();
   const recipientPhone = document.querySelector("#recipientPhone").value.trim();
   const recipientLine = mode === "Otra persona"
-    ? [`*Entrega para:* Otra persona`, `*Recibe:* ${recipientName}`, `*TelÃ©fono de quien recibe:* ${recipientPhone}`]
+    ? [`*Entrega para:* Otra persona`, `*Recibe:* ${recipientName}`, `*Teléfono de quien recibe:* ${recipientPhone}`]
     : ["*Entrega para:* Yo recibo el pedido"];
   const locationLine = getPreciseLocationLine();
   const items = rows
@@ -1339,21 +1612,20 @@ function sendOrder() {
     items,
     "",
     `*Subtotal productos:* ${money(subtotal)}`,
-    `*EnvÃ­o estimado:* ${money(shipping)}`,
+    `*Envío estimado:* ${money(shipping)}`,
     `*Total estimado:* ${money(total)}`,
     "",
     `*Nombre:* ${name}`,
-    `*TelÃ©fono:* ${phone}`,
+    `*Teléfono:* ${phone}`,
     ...recipientLine,
-    `*DirecciÃ³n exacta:* ${messageAddress}`,
+    `*Dirección exacta:* ${messageAddress}`,
     `*Tipo de edificio:* ${buildingType}`,
     `*Especificaciones:* ${addressDetails}`,
     `*Horario de entrega:* ${scheduleText}`,
-    ...advanceLine,
     locationLine,
     "",
     `*Forma de pago:* ${payment}`,
-    "Si pago por transferencia, enviarÃ© el comprobante por WhatsApp."
+    "Quiero pagar en la página cuando esté disponible."
   ].join("\n");
 
   saveWebOrder({
@@ -1413,6 +1685,12 @@ cartItems.addEventListener("click", (event) => {
 
 document.querySelector("#openAdmin").addEventListener("click", openAdmin);
 document.querySelector("#closeAdmin").addEventListener("click", closeAdmin);
+if (payHereButton) {
+  payHereButton.addEventListener("click", () => {
+    document.querySelector("#paymentStatus").textContent = "Pago en línea preparado. Falta conectar Mercado Pago para cobrar dinero real.";
+    showToast("Para cobrar aquí falta conectar Mercado Pago.");
+  });
+}
 document.querySelector("#adminLoginButton").addEventListener("click", loginAdmin);
 document.querySelector("#adminLogout").addEventListener("click", logoutAdmin);
 document.querySelector("#clearPos").addEventListener("click", clearPosSale);
@@ -1438,18 +1716,34 @@ adminPassword.addEventListener("keydown", (event) => {
 });
 adminOrdersElement.addEventListener("click", (event) => {
   const openButton = event.target.closest("[data-open-order]");
+  const openScheduleButton = event.target.closest("[data-open-schedule]");
+  const confirmScheduleButton = event.target.closest("[data-confirm-schedule]");
+  const arrivedScheduleButton = event.target.closest("[data-arrived-schedule]");
+  const deliverScheduleButton = event.target.closest("[data-deliver-schedule]");
   const routeButton = event.target.closest("[data-route-order]");
   const arrivedButton = event.target.closest("[data-arrived-order]");
   const deliverButton = event.target.closest("[data-deliver-order]");
+  const routeViewButton = event.target.closest("[data-route-view]");
 
   if (openButton) {
-    const id = Number(openButton.dataset.openOrder);
-    activeOrderId = activeOrderId === id ? null : id;
+    const id = openButton.dataset.openOrder;
+    activeOrderId = String(activeOrderId) === String(id) ? null : id;
     renderAdminOrders();
   }
+  if (openScheduleButton) {
+    const schedule = openScheduleButton.dataset.openSchedule;
+    activeRouteSchedule = activeRouteSchedule === schedule ? null : schedule;
+    stopAdminRouteTracking();
+    resetAdminRouteMap();
+    renderAdminOrders();
+  }
+  if (confirmScheduleButton) openDeliveryRouteForSchedule(confirmScheduleButton.dataset.confirmSchedule);
+  if (arrivedScheduleButton) checkScheduleArrival(arrivedScheduleButton.dataset.arrivedSchedule);
+  if (deliverScheduleButton) markScheduleDelivered(deliverScheduleButton.dataset.deliverSchedule);
   if (routeButton) openDeliveryRoute(routeButton.dataset.routeOrder);
   if (arrivedButton) checkDeliveryArrival(arrivedButton.dataset.arrivedOrder);
   if (deliverButton) markOrderDelivered(deliverButton.dataset.deliverOrder);
+  if (routeViewButton) setRouteViewMode(routeViewButton.dataset.routeView);
 });
 adminDrawer.addEventListener("click", (event) => {
   if (event.target === adminDrawer) closeAdmin();
@@ -1468,26 +1762,24 @@ document.querySelectorAll("#customerPhone, #recipientPhone").forEach((input) => 
 });
 
 deliverySchedule.addEventListener("change", () => {
-  customDeliveryFields.hidden = deliverySchedule.value !== "Personalizado";
+  customDeliveryFields.hidden = true;
 });
 
 advanceProduct.addEventListener("change", () => {
-  advanceFields.hidden = advanceProduct.value !== "SÃ­";
+  advanceFields.hidden = true;
 });
 
 deliveryMode.addEventListener("change", () => {
   const isOtherPerson = deliveryMode.value === "Otra persona";
   otherPersonFields.hidden = !isOtherPerson;
-  mapPicker.hidden = !isOtherPerson;
-  document.querySelector("#useLocation").hidden = isOtherPerson;
+  mapPicker.hidden = false;
+  document.querySelector("#useLocation").hidden = false;
 
-  if (isOtherPerson) {
-    initDeliveryMap();
-  }
+  initDeliveryMap();
 
   document.querySelector("#locationStatus").textContent = isOtherPerson
-    ? "Toca el mapa para elegir la ubicaciÃ³n de entrega o escribe la direcciÃ³n."
-    : "Usa tu ubicaciÃ³n actual para calcular el envÃ­o.";
+    ? "Toca el punto exacto de entrega para esa persona."
+    : "Usa tu ubicación actual o toca el punto exacto de entrega.";
 });
 
 cartDrawer.addEventListener("click", (event) => {
@@ -1522,4 +1814,5 @@ document.querySelector("#welcomeScreen").addEventListener("animationend", (event
 renderProducts();
 renderCart();
 setupInstallableApp();
+setupFirebaseSync();
 

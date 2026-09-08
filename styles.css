@@ -896,7 +896,8 @@ textarea {
   line-height: 1.45;
 }
 
-.location-button {
+.location-button,
+.pay-here-button {
   min-height: 42px;
   padding: 10px 14px;
   color: var(--navy);
@@ -905,6 +906,13 @@ textarea {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 900;
+}
+
+.pay-here-button {
+  color: white;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  border: 0;
+  box-shadow: 0 12px 26px rgba(0, 97, 168, .14);
 }
 
 .totals-box {
@@ -1540,13 +1548,13 @@ textarea {
 
 .admin-route-card {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   margin-top: 10px;
-  padding: 12px;
-  background: linear-gradient(180deg, #ffffff, #f7fbfd);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 14px 34px rgba(5, 31, 58, .08);
+  padding: 14px;
+  background: #edf5ff;
+  border: 1px solid #d7e7f5;
+  border-radius: 18px;
+  box-shadow: 0 18px 44px rgba(5, 31, 58, .12);
 }
 
 .admin-route-card[hidden] {
@@ -1563,30 +1571,59 @@ textarea {
   font-weight: 800;
 }
 
+.route-view-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.route-view-actions button {
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--navy);
+  font-weight: 900;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.route-view-actions button.active {
+  color: #101923;
+  background: #8ee246;
+  border-color: #8ee246;
+}
+
 .admin-route-map {
   width: 100%;
-  min-height: 320px;
+  min-height: 560px;
   overflow: hidden;
   border: 1px solid #d9e8ef;
-  border-radius: 12px;
+  border-radius: 18px;
   background: #f7fafc;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .85);
 }
 
 .admin-navigation {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr);
-  gap: 12px;
 }
 
 .route-steps-card {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  z-index: 500;
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding: 14px;
-  background: #101923;
-  border-radius: 12px;
-  box-shadow: 0 14px 34px rgba(5, 31, 58, .16);
+  gap: 8px;
+  max-width: 620px;
+  padding: 22px 24px;
+  background: rgba(8, 12, 17, .92);
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgba(5, 31, 58, .28);
+  backdrop-filter: blur(8px);
 }
 
 .route-steps-label {
@@ -1598,12 +1635,13 @@ textarea {
 
 .route-steps-card > strong {
   color: white;
-  font-size: 22px;
+  font-size: clamp(30px, 5vw, 58px);
   line-height: 1.15;
 }
 
 .route-steps-card > small {
   color: #c8d1da;
+  font-size: clamp(20px, 3vw, 34px);
   font-weight: 900;
 }
 
@@ -1619,6 +1657,68 @@ textarea {
   font-weight: 900;
   background: #8ee246;
   border-radius: 999px;
+}
+
+.schedule-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  color: var(--ink);
+  background: #f7fafc;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.schedule-card.open {
+  border-color: rgba(42, 157, 143, .45);
+  box-shadow: 0 18px 42px rgba(0, 97, 168, .14);
+}
+
+.schedule-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-card h4 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 32px;
+}
+
+.schedule-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.schedule-summary {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.schedule-order-line {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  background: #f6fbff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.schedule-order-line > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: white;
+  font-weight: 900;
+  background: var(--green);
+  border-radius: 50%;
 }
 
 .admin-route-map .leaflet-control-zoom {
@@ -1785,7 +1885,126 @@ textarea {
     min-height: 280px;
   }
 
-  .route-steps-list {
-    max-height: 180px;
+  .route-steps-card > strong {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .site-header {
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .nav-links {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .nav-links a {
+    min-height: 40px;
+    padding: 0 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .cart-panel {
+    width: 100%;
+    height: 100dvh;
+    padding: 14px;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  }
+
+  .cart-items {
+    max-height: 28vh;
+    padding: 12px 0;
+  }
+
+  .cart-line {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-controls {
+    justify-content: space-between;
+  }
+
+  .checkout-box {
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .delivery-map {
+    height: 300px;
+  }
+
+  .product-card {
+    grid-template-columns: 112px minmax(0, 1fr);
+    min-height: 150px;
+  }
+
+  .product-card img {
+    height: 100%;
+  }
+
+  .product-info {
+    padding: 12px;
+  }
+
+  .product-info h3 {
+    font-size: 17px;
+  }
+
+  .admin-route-card {
+    margin: 8px -6px 0;
+  }
+
+  .admin-navigation {
+    gap: 8px;
+  }
+
+  .route-steps-card {
+    order: -1;
+  }
+
+  .admin-route-map {
+    min-height: 72vh;
+    border-radius: 18px;
+  }
+
+  .route-steps-card {
+    top: 14px;
+    right: 14px;
+    left: 14px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .route-steps-card > strong {
+    font-size: 42px;
+  }
+
+  .route-steps-card > small {
+    font-size: 24px;
+  }
+
+  .schedule-card-head,
+  .schedule-order-line {
+    display: grid;
+  }
+
+  .schedule-order-line {
+    grid-template-columns: 34px 1fr;
+  }
+
+  .schedule-order-line b {
+    justify-self: start;
+    grid-column: 2;
   }
 }

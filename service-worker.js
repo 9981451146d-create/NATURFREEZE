@@ -1,4 +1,4 @@
-const CACHE_NAME = "naturfreeze-app-v1";
+const CACHE_NAME = "naturfreeze-app-v4";
 const APP_ASSETS = [
   "./",
   "./index.html",
