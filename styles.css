@@ -37,7 +37,7 @@ body {
     radial-gradient(circle at 20% 20%, rgba(127, 189, 45, .28), transparent 32%),
     linear-gradient(135deg, rgba(6, 40, 77, .95), rgba(8, 119, 201, .92));
   animation: welcomeExit .7s ease forwards;
-  animation-delay: 1.5s;
+  animation-delay: 2.25s;
 }
 
 .welcome-card {
@@ -52,6 +52,13 @@ body {
   border-radius: 8px;
   box-shadow: 0 28px 80px rgba(0, 0, 0, .24);
   backdrop-filter: blur(14px);
+}
+
+.welcome-card img {
+  justify-self: center;
+  width: min(420px, 76vw);
+  max-height: 160px;
+  object-fit: contain;
 }
 
 .welcome-card span {
@@ -147,7 +154,6 @@ textarea {
   height: 62px;
   object-fit: contain;
   object-position: left center;
-  mix-blend-mode: multiply;
 }
 
 .sliding-logo {
@@ -282,7 +288,6 @@ textarea {
   display: block;
   width: min(430px, 92vw);
   margin: 0 0 20px;
-  mix-blend-mode: multiply;
 }
 
 .hero-actions,
@@ -711,12 +716,13 @@ textarea {
 
 .cart-panel {
   display: grid;
-  grid-template-rows: auto minmax(120px, .85fr) minmax(260px, 1fr) auto auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
   width: min(100%, 520px);
   height: 100%;
   padding: 20px;
   background: white;
   box-shadow: var(--shadow);
+  overflow: auto;
 }
 
 .cart-head {
@@ -741,12 +747,63 @@ textarea {
   font-size: 28px;
 }
 
+.checkout-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+  padding: 8px;
+  background: #eef7ff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.checkout-steps span {
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+}
+
+.checkout-steps span.active {
+  color: white;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+}
+
+.checkout-steps span.done {
+  color: var(--navy);
+  background: #c7f7ae;
+}
+
+.cart-step {
+  display: none;
+  min-height: 0;
+}
+
+.cart-step.active {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.cart-step h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 22px;
+}
+
 .cart-items {
   display: grid;
   align-content: start;
   gap: 12px;
-  overflow: auto;
-  padding: 20px 0;
+  max-height: none;
+  overflow: visible;
+  padding: 4px 0;
 }
 
 .cart-line {
@@ -790,7 +847,7 @@ textarea {
 .checkout-box {
   display: grid;
   gap: 8px;
-  overflow: auto;
+  overflow: visible;
   padding: 16px 0;
   border-top: 1px solid var(--line);
 }
@@ -799,6 +856,73 @@ textarea {
   margin: 0 0 4px;
   color: var(--navy);
   font-size: 18px;
+}
+
+.cart-step-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px 0 2px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .72), white 24%);
+}
+
+.cart-step-actions .primary-action,
+.cart-step-actions .secondary-action {
+  justify-content: center;
+}
+
+.packing-animation {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 110px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #eef9ff, #f4ffec);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.packing-animation span {
+  position: absolute;
+  top: 18px;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  border-radius: 8px;
+  opacity: 0;
+}
+
+.packing-animation span:nth-child(1) { left: 18%; }
+.packing-animation span:nth-child(2) { left: 44%; }
+.packing-animation span:nth-child(3) { left: 70%; }
+
+.packing-animation strong {
+  position: absolute;
+  bottom: 20px;
+  width: 120px;
+  height: 54px;
+  background:
+    linear-gradient(135deg, transparent 0 18px, #d89d53 19px),
+    linear-gradient(45deg, transparent 0 18px, #bf7d31 19px);
+  border: 3px solid #9b6528;
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.packing-animation.play span {
+  animation: packDrop .85s ease forwards;
+}
+
+.packing-animation.play span:nth-child(2) { animation-delay: .12s; }
+.packing-animation.play span:nth-child(3) { animation-delay: .24s; }
+
+@keyframes packDrop {
+  0% { opacity: 0; transform: translateY(-36px) scale(.7) rotate(-12deg); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(56px) scale(.55) rotate(12deg); }
 }
 
 .checkout-box label {
@@ -1577,14 +1701,24 @@ textarea {
   gap: 8px;
 }
 
+.route-map-actions {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 520;
+  display: grid;
+  width: 92px;
+}
+
 .route-view-actions button {
-  min-height: 38px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 0 10px;
   color: var(--navy);
   font-weight: 900;
   background: white;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(5, 31, 58, .14);
   cursor: pointer;
 }
 
@@ -1724,6 +1858,31 @@ textarea {
   background: white;
   border-radius: 28px 28px 0 0;
   box-shadow: 0 -14px 34px rgba(5, 31, 58, .12);
+}
+
+.admin-route-card.route-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  margin: 0;
+  padding: 0;
+  background: #eef4fb;
+  border: 0;
+  border-radius: 0;
+}
+
+.admin-route-card.route-fullscreen > div:first-child {
+  display: none;
+}
+
+.admin-route-card.route-fullscreen .admin-route-map {
+  height: 100dvh;
+  min-height: 100dvh;
+  border-radius: 0;
+}
+
+body.map-fullscreen-open {
+  overflow: hidden;
 }
 
 .route-bottom-sheet strong {
@@ -2005,12 +2164,13 @@ textarea {
     width: 100%;
     height: 100dvh;
     padding: 14px;
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    overflow: auto;
   }
 
   .cart-items {
-    max-height: 28vh;
-    padding: 12px 0;
+    max-height: none;
+    padding: 4px 0;
   }
 
   .cart-line {
@@ -2023,7 +2183,19 @@ textarea {
 
   .checkout-box {
     gap: 10px;
-    padding: 14px 0;
+    padding: 10px 0;
+  }
+
+  .checkout-steps {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin: 10px 0;
+  }
+
+  .checkout-steps span {
+    min-height: 34px;
+    font-size: 11px;
   }
 
   .delivery-map {
@@ -2076,6 +2248,17 @@ textarea {
     padding: 11px 12px;
     border-radius: 16px;
     gap: 4px 10px;
+  }
+
+  .route-map-actions {
+    top: 118px;
+    right: 12px;
+    width: 82px;
+  }
+
+  .route-map-actions button {
+    min-height: 38px;
+    font-size: 12px;
   }
 
   .route-steps-card > strong {

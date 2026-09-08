@@ -200,6 +200,7 @@ let adminRouteSummary = null;
 let adminRouteSteps = [];
 let activeRouteStepIndex = 0;
 let adminRouteViewMode = "overview";
+let cartStep = 1;
 let soundContext = null;
 let soundUnlocked = false;
 let welcomeSoundPlayed = false;
@@ -276,7 +277,7 @@ function subscribeFirebaseProducts() {
           name: product.name || "Producto NaturFreeze",
           price: Number(product.price) || 0,
           presentation: product.presentation || "1 pieza",
-          image: product.image || "assets/logo-naturfreeze-mark.jpg",
+          image: product.image || "assets/logo-naturfreeze-mark-transparent.png",
           detail: product.detail || "Producto NaturFreeze."
         });
       });
@@ -508,6 +509,88 @@ function getDeliveryScheduleText() {
   return deliverySchedule.value;
 }
 
+function setCartStep(step, animatePacking = false) {
+  cartStep = Math.min(3, Math.max(1, step));
+  document.querySelectorAll("[data-cart-step]").forEach((section) => {
+    section.classList.toggle("active", Number(section.dataset.cartStep) === cartStep);
+  });
+  document.querySelectorAll("[data-step-indicator]").forEach((indicator) => {
+    const indicatorStep = Number(indicator.dataset.stepIndicator);
+    indicator.classList.toggle("active", indicatorStep === cartStep);
+    indicator.classList.toggle("done", indicatorStep < cartStep);
+  });
+
+  if (animatePacking) {
+    const packing = document.querySelector("#packingAnimation");
+    if (packing) {
+      packing.classList.remove("play");
+      window.requestAnimationFrame(() => packing.classList.add("play"));
+    }
+  }
+
+  if (cartStep === 2) {
+    initDeliveryMap();
+  }
+
+  document.querySelector(".cart-panel")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function validateCartSummary() {
+  if (!cart.size) {
+    showToast("Agrega al menos un producto.");
+    return false;
+  }
+  return true;
+}
+
+function validateDeliveryStep() {
+  const name = document.querySelector("#customerName").value.trim();
+  const phone = document.querySelector("#customerPhone").value.trim();
+  const address = document.querySelector("#customerAddress").value.trim();
+  const buildingType = document.querySelector("#buildingType").value;
+  const mode = document.querySelector("#deliveryMode").value;
+  const recipientName = document.querySelector("#recipientName").value.trim();
+  const recipientPhone = document.querySelector("#recipientPhone").value.trim();
+  const scheduleText = getDeliveryScheduleText();
+
+  if (!name) {
+    showToast("Escribe el nombre para el pedido.");
+    return false;
+  }
+
+  if (!isTenDigitPhone(phone)) {
+    showToast("El teléfono debe tener exactamente 10 dígitos.");
+    return false;
+  }
+
+  if (!address) {
+    showToast("Escribe una referencia de dirección.");
+    return false;
+  }
+
+  if (!customerCoords) {
+    showToast("Elige el punto exacto de entrega en el mapa.");
+    return false;
+  }
+
+  if (!buildingType) {
+    showToast("Selecciona el tipo de edificio.");
+    return false;
+  }
+
+  if (mode === "Otra persona" && (!recipientName || !isTenDigitPhone(recipientPhone))) {
+    showToast("Escribe nombre y teléfono de 10 dígitos de quien recibe.");
+    return false;
+  }
+
+  if (!scheduleText) {
+    showToast("Selecciona el horario de entrega.");
+    return false;
+  }
+
+  return true;
+}
+
 
 function openAdmin() {
   adminDrawer.classList.add("open");
@@ -712,12 +795,13 @@ function renderScheduleDetail(schedule, orders) {
           <strong>Ruta de entrega</strong>
           <span id="adminRouteStatus">Confirma la ruta para iniciar.</span>
         </div>
-        <div class="route-view-actions">
-          <button class="active" type="button" data-route-view="overview">Mapa completo</button>
-          <button type="button" data-route-view="close">Vista cercana</button>
-        </div>
         <div class="admin-navigation">
           <div class="admin-route-map" id="adminRouteMap" aria-label="Mapa interno de entrega"></div>
+          <div class="route-view-actions route-map-actions">
+            <button class="active" type="button" data-route-view="overview" aria-label="Ver ruta completa">Ruta</button>
+            <button type="button" data-route-view="close" aria-label="Vista cercana">Cerca</button>
+            <button type="button" data-route-fullscreen aria-label="Pantalla completa">Pantalla</button>
+          </div>
           <div class="route-steps-card" id="routeStepsCard">
             <span class="route-turn-icon" aria-hidden="true"></span>
             <strong id="nextRouteInstruction">Esperando ruta...</strong>
@@ -733,7 +817,6 @@ function renderScheduleDetail(schedule, orders) {
               <strong id="routeEta">Calculando...</strong>
               <span id="routeDestinationText">Entrega NaturFreeze</span>
             </div>
-            <button class="copy-button" type="button" data-route-view="overview">Mapa</button>
           </div>
         </div>
       </div>
@@ -919,10 +1002,27 @@ function setRouteViewMode(mode) {
 
   if (!adminRouteMap || !adminRouteUserMarker) return;
   if (mode === "close") {
-    adminRouteMap.setView(adminRouteUserMarker.getLatLng(), 17);
+    adminRouteMap.setView(adminRouteUserMarker.getLatLng(), 18);
   } else if (adminRouteLine) {
     adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
   }
+}
+
+function toggleRouteFullscreen() {
+  const routeCard = document.querySelector("#adminRouteCard");
+  if (!routeCard) return;
+
+  routeCard.classList.toggle("route-fullscreen");
+  document.body.classList.toggle("map-fullscreen-open", routeCard.classList.contains("route-fullscreen"));
+  window.setTimeout(() => {
+    if (!adminRouteMap) return;
+    adminRouteMap.invalidateSize();
+    if (adminRouteViewMode === "close" && adminRouteUserMarker) {
+      adminRouteMap.setView(adminRouteUserMarker.getLatLng(), 18);
+    } else if (adminRouteLine) {
+      adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
+    }
+  }, 160);
 }
 
 function makeRouteIcon(type, number = "") {
@@ -1272,7 +1372,7 @@ function saveProductEdit() {
     name: editProductName.value.trim() || existingProduct.name || "Producto nuevo",
     price: Math.max(0, Number(editProductPrice.value) || 0),
     presentation: editProductPresentation.value.trim() || existingProduct.presentation || "1 pieza",
-    image: editProductImage.value.trim() || existingProduct.image || "assets/logo-naturfreeze-mark.jpg",
+    image: editProductImage.value.trim() || existingProduct.image || "assets/logo-naturfreeze-mark-transparent.png",
     detail: editProductDetail.value.trim() || existingProduct.detail || "Producto NaturFreeze."
   };
 
@@ -1459,6 +1559,7 @@ function changeQuantity(id, amount) {
 function openCart() {
   cartDrawer.classList.add("open");
   cartDrawer.setAttribute("aria-hidden", "false");
+  setCartStep(1);
   initDeliveryMap();
 }
 
@@ -1619,57 +1720,7 @@ function useCurrentLocation() {
 }
 
 function validateOrder() {
-  if (!getCartRows().length) {
-    showToast("Agrega al menos un producto.");
-    return false;
-  }
-
-  const name = document.querySelector("#customerName").value.trim();
-  const phone = document.querySelector("#customerPhone").value.trim();
-  const address = document.querySelector("#customerAddress").value.trim();
-  const messageAddress = cleanAddressForMessage(address);
-  const buildingType = document.querySelector("#buildingType").value;
-  const mode = document.querySelector("#deliveryMode").value;
-  const recipientName = document.querySelector("#recipientName").value.trim();
-  const recipientPhone = document.querySelector("#recipientPhone").value.trim();
-  const scheduleText = getDeliveryScheduleText();
-
-  if (!name) {
-    showToast("Escribe el nombre para el pedido.");
-    return false;
-  }
-
-  if (!isTenDigitPhone(phone)) {
-    showToast("El teléfono debe tener exactamente 10 dígitos.");
-    return false;
-  }
-
-  if (!address) {
-    showToast("Escribe una referencia de dirección.");
-    return false;
-  }
-
-  if (!customerCoords) {
-    showToast("Elige el punto exacto de entrega en el mapa.");
-    return false;
-  }
-
-  if (!buildingType) {
-    showToast("Selecciona el tipo de edificio.");
-    return false;
-  }
-
-  if (mode === "Otra persona" && (!recipientName || !isTenDigitPhone(recipientPhone))) {
-    showToast("Escribe nombre y teléfono de 10 dígitos de quien recibe.");
-    return false;
-  }
-
-  if (!scheduleText) {
-    showToast("Selecciona el horario de entrega.");
-    return false;
-  }
-
-  return true;
+  return validateCartSummary() && validateDeliveryStep();
 }
 
 function sendOrder() {
@@ -1816,6 +1867,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   const arrivedButton = event.target.closest("[data-arrived-order]");
   const deliverButton = event.target.closest("[data-deliver-order]");
   const routeViewButton = event.target.closest("[data-route-view]");
+  const routeFullscreenButton = event.target.closest("[data-route-fullscreen]");
 
   if (openButton) {
     const id = openButton.dataset.openOrder;
@@ -1836,12 +1888,21 @@ adminOrdersElement.addEventListener("click", (event) => {
   if (arrivedButton) checkDeliveryArrival(arrivedButton.dataset.arrivedOrder);
   if (deliverButton) markOrderDelivered(deliverButton.dataset.deliverOrder);
   if (routeViewButton) setRouteViewMode(routeViewButton.dataset.routeView);
+  if (routeFullscreenButton) toggleRouteFullscreen();
 });
 adminDrawer.addEventListener("click", (event) => {
   if (event.target === adminDrawer) closeAdmin();
 });
 document.querySelector("#openCart").addEventListener("click", openCart);
 document.querySelector("#closeCart").addEventListener("click", closeCart);
+document.querySelector("#cartNextSummary").addEventListener("click", () => {
+  if (validateCartSummary()) setCartStep(2, true);
+});
+document.querySelector("#cartNextAddress").addEventListener("click", () => {
+  if (validateDeliveryStep()) setCartStep(3);
+});
+document.querySelector("#cartBackAddress").addEventListener("click", () => setCartStep(1));
+document.querySelector("#cartBackPayment").addEventListener("click", () => setCartStep(2));
 document.querySelector("#sendOrder").addEventListener("click", sendOrder);
 document.querySelector("#useLocation").addEventListener("click", useCurrentLocation);
 document.querySelector("#customerAddress").addEventListener("change", updateShippingFromAddressText);

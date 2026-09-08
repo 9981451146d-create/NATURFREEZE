@@ -1,13 +1,16 @@
-const CACHE_NAME = "naturfreeze-app-v6";
+const CACHE_NAME = "naturfreeze-app-v7";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
+  "./assets/logo.svg",
   "./assets/logo-naturfreeze-mark.jpg",
+  "./assets/logo-naturfreeze-mark-transparent.png",
   "./assets/logo-naturfreeze.jpeg",
   "./assets/logo-naturfreeze-cropped.jpg",
+  "./assets/logo-naturfreeze-transparent.png",
   "./assets/tilapia.jpg",
   "./assets/pollo-picoso.jpg",
   "./assets/mix-berries.jpg",

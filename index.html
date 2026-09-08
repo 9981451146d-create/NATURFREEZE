@@ -7,7 +7,7 @@
     <meta name="description" content="Tienda de productos congelados Naturfreeze Cancún con carrito, entregas locales y pedidos por WhatsApp.">
     <meta name="theme-color" content="#101923">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="assets/logo-naturfreeze-mark.jpg">
+    <link rel="apple-touch-icon" href="assets/logo-naturfreeze-mark-transparent.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
   <body>
     <div class="welcome-screen" id="welcomeScreen" aria-live="polite">
       <div class="welcome-card">
+        <img src="assets/logo-naturfreeze-transparent.png" alt="NaturFreeze Cancún">
         <span>Bienvenido/a</span>
         <strong>¿List@ para ordenar?</strong>
       </div>
@@ -24,7 +25,7 @@
 
     <header class="site-header">
       <a class="brand sliding-logo" href="#inicio" aria-label="Naturfreeze inicio">
-        <img src="assets/logo-naturfreeze-mark.jpg" alt="Naturfreeze Cancún">
+        <img src="assets/logo-naturfreeze-mark-transparent.png" alt="Naturfreeze Cancún">
       </a>
       <nav class="nav-links" aria-label="Principal">
         <a href="#productos">Productos</a>
@@ -50,7 +51,7 @@
     <main>
       <section class="hero" id="inicio">
         <div class="hero-copy">
-          <img class="hero-logo" src="assets/logo-naturfreeze-cropped.jpg" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
+          <img class="hero-logo" src="assets/logo-naturfreeze-transparent.png" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
           <span class="eyebrow">Congelados premium en Cancún</span>
           <h1>Frescura que preserva lo esencial.</h1>
           <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atención directa por WhatsApp.</p>
@@ -158,10 +159,27 @@
           <button class="icon-button" id="closeCart" type="button" aria-label="Cerrar carrito">x</button>
         </div>
 
-        <div class="cart-items" id="cartItems"></div>
+        <div class="checkout-steps" aria-label="Proceso de pedido">
+          <span class="active" data-step-indicator="1">1. Pedido</span>
+          <span data-step-indicator="2">2. Dirección</span>
+          <span data-step-indicator="3">3. Pago</span>
+        </div>
 
-        <div class="checkout-box">
-          <h3>Seleccionar dirección</h3>
+        <section class="cart-step active" data-cart-step="1">
+          <h3>Resumen de pedido</h3>
+          <div class="cart-items" id="cartItems"></div>
+          <button class="primary-action full" id="cartNextSummary" type="button">Continuar</button>
+        </section>
+
+        <section class="cart-step" data-cart-step="2">
+          <div class="packing-animation" id="packingAnimation" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <strong></strong>
+          </div>
+          <div class="checkout-box">
+          <h3>Pon tu dirección</h3>
           <label for="customerName">Nombre</label>
           <input id="customerName" type="text" placeholder="Tu nombre" autocomplete="name">
 
@@ -228,7 +246,16 @@
           <div class="conditional-fields" id="customDeliveryFields" hidden>
             <input id="customDeliveryTime" type="hidden">
           </div>
+          </div>
+          <div class="cart-step-actions">
+            <button class="secondary-action" id="cartBackAddress" type="button">Atrás</button>
+            <button class="primary-action" id="cartNextAddress" type="button">Continuar</button>
+          </div>
+        </section>
 
+        <section class="cart-step" data-cart-step="3">
+          <div class="checkout-box payment-step-box">
+          <h3>Paga y confirma</h3>
           <label for="paymentMethod">Pago</label>
           <select id="paymentMethod">
             <option value="Transferencia - enviaré comprobante por WhatsApp">Transferencia - enviaré comprobante por WhatsApp</option>
@@ -236,16 +263,20 @@
           </select>
           <button class="pay-here-button" id="payHere" type="button" hidden>Pagar aquí</button>
           <p class="field-help" id="paymentStatus">Puedes pagar por transferencia o efectivo al recibir.</p>
-        </div>
 
-        <div class="totals-box">
-          <div><span>Subtotal productos</span><strong id="cartSubtotal">$0</strong></div>
-          <div><span>Envío estimado</span><strong id="shippingTotal">$25</strong></div>
-          <div class="grand-total"><span>Total estimado</span><strong id="cartTotal">$0</strong></div>
-        </div>
+          <div class="totals-box">
+            <div><span>Subtotal productos</span><strong id="cartSubtotal">$0</strong></div>
+            <div><span>Envío estimado</span><strong id="shippingTotal">$25</strong></div>
+            <div class="grand-total"><span>Total estimado</span><strong id="cartTotal">$0</strong></div>
+          </div>
+          </div>
 
-        <button class="primary-action full" id="sendOrder" type="button">Enviar pedido por WhatsApp</button>
-        <p class="cart-note">Si eliges transferencia, envía el comprobante por WhatsApp después de mandar el pedido.</p>
+          <div class="cart-step-actions">
+            <button class="secondary-action" id="cartBackPayment" type="button">Atrás</button>
+            <button class="primary-action" id="sendOrder" type="button">Enviar pedido por WhatsApp</button>
+          </div>
+          <p class="cart-note">Si eliges transferencia, envía el comprobante por WhatsApp después de mandar el pedido.</p>
+        </section>
       </div>
     </aside>
 
@@ -255,7 +286,7 @@
         <button class="icon-button admin-close" id="closeAdmin" type="button" aria-label="Salir del administrador">Salir</button>
 
         <section class="admin-login-card" id="adminLogin">
-          <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze Cancun">
+          <img src="assets/logo-naturfreeze-mark-transparent.png" alt="NaturFreeze Cancun">
           <span class="eyebrow">Acceso administrador</span>
           <h2 id="adminTitle">Iniciar sesion</h2>
           <p>Entra al panel interno para usar el punto de venta de NaturFreeze.</p>
@@ -267,7 +298,7 @@
         <section class="admin-dashboard" id="adminPos" hidden>
           <div class="admin-topbar">
             <div class="admin-operator">
-              <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze">
+              <img src="assets/logo-naturfreeze-mark-transparent.png" alt="NaturFreeze">
               <div>
                 <span>Admin conectado</span>
                 <strong>NaturFreeze POS</strong>
