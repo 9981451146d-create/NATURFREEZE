@@ -200,6 +200,9 @@ let adminRouteSummary = null;
 let adminRouteSteps = [];
 let activeRouteStepIndex = 0;
 let adminRouteViewMode = "overview";
+let soundContext = null;
+let soundUnlocked = false;
+let welcomeSoundPlayed = false;
 
 function money(value) {
   return new Intl.NumberFormat("es-MX", {
@@ -380,8 +383,69 @@ function setupInstallableApp() {
   window.addEventListener("appinstalled", () => {
     deferredInstallPrompt = null;
     installAppButton.hidden = true;
+    playSound("success");
     showToast("NaturFreeze instalada.");
   });
+}
+
+function getSoundContext() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+  if (!soundContext) soundContext = new AudioContext();
+  return soundContext;
+}
+
+function unlockSound() {
+  const context = getSoundContext();
+  if (!context) return;
+  if (context.state === "suspended") context.resume();
+  soundUnlocked = true;
+  if (!welcomeSoundPlayed) {
+    welcomeSoundPlayed = true;
+    window.setTimeout(() => playSound("welcome"), 80);
+  }
+}
+
+function playTone(frequency, start, duration, gain = 0.05, type = "sine") {
+  const context = getSoundContext();
+  if (!context || !soundUnlocked) return;
+
+  const oscillator = context.createOscillator();
+  const volume = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, context.currentTime + start);
+  volume.gain.setValueAtTime(0.0001, context.currentTime + start);
+  volume.gain.exponentialRampToValueAtTime(gain, context.currentTime + start + 0.02);
+  volume.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + start + duration);
+  oscillator.connect(volume);
+  volume.connect(context.destination);
+  oscillator.start(context.currentTime + start);
+  oscillator.stop(context.currentTime + start + duration + 0.03);
+}
+
+function playSound(type = "tap") {
+  if (!soundUnlocked) return;
+
+  if (type === "welcome") {
+    playTone(523.25, 0, 0.12, 0.045);
+    playTone(659.25, 0.10, 0.14, 0.045);
+    playTone(783.99, 0.22, 0.20, 0.05);
+    return;
+  }
+
+  if (type === "success") {
+    playTone(587.33, 0, 0.10, 0.05);
+    playTone(880, 0.10, 0.18, 0.055);
+    return;
+  }
+
+  if (type === "route") {
+    playTone(392, 0, 0.08, 0.04, "triangle");
+    playTone(523.25, 0.08, 0.11, 0.045, "triangle");
+    return;
+  }
+
+  playTone(720, 0, 0.045, 0.03, "triangle");
 }
 
 function applyStoredProductEdits() {
@@ -482,6 +546,7 @@ function loginAdmin() {
   adminPos.hidden = false;
   switchAdminView("pos");
   renderAdminDashboard();
+  playSound("success");
   showToast("Administrador activo.");
 }
 
@@ -953,9 +1018,9 @@ function renderAdminRouteMap(order, current) {
       scrollWheelZoom: true
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      attribution: "&copy; OpenStreetMap &copy; CARTO",
-      maxZoom: 20
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap",
+      maxZoom: 19
     }).addTo(adminRouteMap);
   }
 
@@ -964,7 +1029,7 @@ function renderAdminRouteMap(order, current) {
     adminRouteUserMarker = L.marker(currentPoint, {
       icon: makeRouteIcon("driver"),
       zIndexOffset: 1000
-    }).addTo(adminRouteMap).bindPopup("Tu ubicacion actual").openPopup();
+    }).addTo(adminRouteMap);
   } else {
     adminRouteUserMarker.setLatLng(currentPoint);
   }
@@ -1002,7 +1067,7 @@ function renderAdminRouteMap(order, current) {
   }
 
   if (adminRouteViewMode === "close") {
-    adminRouteMap.setView(currentPoint, 17);
+    adminRouteMap.setView(currentPoint, 18);
   } else {
     adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
   }
@@ -1027,6 +1092,7 @@ async function loadOpenRouteLine(order, current, destinations) {
       opacity: .95,
       dashArray: ""
     });
+    playSound("route");
     adminRouteMap.fitBounds(adminRouteLine.getBounds(), { padding: [28, 28] });
 
     const routeStatus = document.querySelector("#adminRouteStatus");
@@ -1376,6 +1442,7 @@ function renderCart() {
 function addToCart(id) {
   cart.set(id, (cart.get(id) || 0) + 1);
   renderCart();
+  playSound("success");
   showToast("Producto agregado a mis pedidos.");
 }
 
@@ -1462,9 +1529,9 @@ function initDeliveryMap() {
     scrollWheelZoom: false
   }).setView([STORE_LOCATION.lat, STORE_LOCATION.lng], 13);
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 20,
-    attribution: "&copy; OpenStreetMap &copy; CARTO"
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
   }).addTo(deliveryMap);
 
   storeMarker = L.marker([STORE_LOCATION.lat, STORE_LOCATION.lng]).addTo(deliveryMap);
@@ -1678,6 +1745,7 @@ function sendOrder() {
     }))
   });
 
+  playSound("success");
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noreferrer");
 }
 
@@ -1816,9 +1884,11 @@ document.querySelector("#copyClabe").addEventListener("click", async () => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  unlockSound();
   const target = event.target.closest("button, a");
   if (!target) return;
 
+  playSound("tap");
   target.classList.remove("tap-feedback");
   window.requestAnimationFrame(() => target.classList.add("tap-feedback"));
 });

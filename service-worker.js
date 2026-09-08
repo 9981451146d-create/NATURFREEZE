@@ -1,4 +1,4 @@
-const CACHE_NAME = "naturfreeze-app-v5";
+const CACHE_NAME = "naturfreeze-app-v6";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -39,6 +39,9 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  const appUrl = new URL(self.location.href);
+  if (requestUrl.origin !== appUrl.origin) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
