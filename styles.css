@@ -24,6 +24,7 @@ body {
   color: var(--ink);
   background: #f6fbff;
   font-family: Inter, Arial, sans-serif;
+  overflow-wrap: anywhere;
 }
 
 .welcome-screen {
@@ -34,8 +35,8 @@ body {
   place-items: center;
   padding: 24px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(127, 189, 45, .28), transparent 32%),
-    linear-gradient(135deg, rgba(6, 40, 77, .95), rgba(8, 119, 201, .92));
+    radial-gradient(circle at 18% 18%, rgba(127, 189, 45, .22), transparent 34%),
+    linear-gradient(135deg, #f8fcff, #e9f7ff);
   animation: welcomeExit .7s ease forwards;
   animation-delay: 2.25s;
 }
@@ -45,10 +46,10 @@ body {
   gap: 10px;
   width: min(680px, 92vw);
   padding: clamp(28px, 7vw, 64px);
-  color: white;
+  color: var(--navy);
   text-align: center;
-  background: rgba(255, 255, 255, .12);
-  border: 1px solid rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .86);
+  border: 1px solid rgba(8, 119, 201, .14);
   border-radius: 8px;
   box-shadow: 0 28px 80px rgba(0, 0, 0, .24);
   backdrop-filter: blur(14px);
@@ -59,6 +60,7 @@ body {
   width: min(420px, 76vw);
   max-height: 160px;
   object-fit: contain;
+  mix-blend-mode: multiply;
 }
 
 .welcome-card span {
@@ -67,7 +69,7 @@ body {
 }
 
 .welcome-card strong {
-  color: #9be35d;
+  color: var(--green);
   font-size: clamp(22px, 4vw, 44px);
 }
 
@@ -1883,7 +1885,7 @@ textarea {
 .admin-operator img {
   width: 42px;
   height: 42px;
-  background: transparent;
+  background: white;
   border-radius: 8px;
 }
 
@@ -3772,6 +3774,10 @@ body.map-fullscreen-open {
   opacity: .45;
 }
 
+.route-contact-actions [hidden] {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .confirm-detail-grid,
   .product-type-grid {
@@ -3995,5 +4001,156 @@ body.map-fullscreen-open {
 
   .route-delivered-button {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-drawer.open {
+    background: #f7f8fa;
+  }
+
+  .admin-dashboard {
+    min-width: 0;
+  }
+
+  .admin-topbar {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 16px;
+  }
+
+  .admin-operator {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: center;
+    width: 100%;
+  }
+
+  .admin-operator img {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+    border-radius: 14px;
+  }
+
+  .admin-operator span {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .admin-operator strong {
+    font-size: 24px;
+    line-height: 1.12;
+    overflow-wrap: normal;
+  }
+
+  .store-status-pill {
+    justify-content: start;
+    min-height: 42px;
+    font-size: 20px;
+  }
+
+  .admin-top-actions {
+    width: 100%;
+  }
+
+  .admin-top-actions button {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .admin-tabs {
+    gap: 10px;
+    padding: 4px 0;
+  }
+
+  .admin-tabs button {
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+
+  .admin-section-head {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 16px;
+  }
+
+  .admin-section-head .admin-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .admin-section-head .admin-actions button {
+    min-width: 0;
+    width: 100%;
+    min-height: 50px;
+    padding-inline: 10px;
+    font-size: 16px;
+  }
+
+  .menu-help-banner {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .menu-help-banner strong {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .menu-help-banner span {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .admin-product-category {
+    border-radius: 14px;
+  }
+
+  .admin-product-category-head {
+    padding: 14px;
+  }
+
+  .admin-product-category-head strong {
+    font-size: 18px;
+  }
+
+  .admin-product-card img {
+    width: 54px;
+    height: 54px;
+  }
+
+  .admin-product-card h4 {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .admin-product-card p {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .admin-product-actions {
+    gap: 8px;
+  }
+
+  .product-state,
+  .kebab-button {
+    min-height: 42px;
+  }
+
+  .route-steps-card {
+    width: min(82vw, 330px);
+    min-height: auto;
+  }
+
+  .route-bottom-sheet {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 }

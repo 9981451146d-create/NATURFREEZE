@@ -1195,12 +1195,12 @@ function renderScheduleDetail(schedule, orders) {
             <div>
               <strong id="routeEta">Calculando...</strong>
               <span id="routeDestinationText">Entrega NaturFreeze</span>
-              <small id="routeOrderDetails">Los detalles del pedido aparecerán aquí al acercarte.</small>
+              <small id="routeOrderDetails" hidden>Los detalles del pedido aparecerán aquí al acercarte.</small>
             </div>
             <div class="route-contact-actions">
-              <button class="route-delivered-button" type="button" data-route-deliver-current>Pedido entregado</button>
-              <a class="route-chat-button" id="routeWhatsAppButton" href="#" target="_blank" rel="noreferrer">WhatsApp</a>
-              <a class="route-call-button" id="routeCallButton" href="#">Llamar</a>
+              <button class="route-delivered-button" type="button" data-route-deliver-current hidden>Pedido entregado</button>
+              <a class="route-chat-button" id="routeWhatsAppButton" href="#" target="_blank" rel="noreferrer" hidden>WhatsApp</a>
+              <a class="route-call-button" id="routeCallButton" href="#" hidden>Llamar</a>
             </div>
           </div>
         </div>
@@ -1343,6 +1343,8 @@ function updateRouteBottomSheet(order, current, destination) {
   const orderDetails = document.querySelector("#routeOrderDetails");
   const whatsAppButton = document.querySelector("#routeWhatsAppButton");
   const callButton = document.querySelector("#routeCallButton");
+  const deliveredButton = document.querySelector("[data-route-deliver-current]");
+  const bottomSheet = document.querySelector(".route-bottom-sheet");
   const speedKmh = Number.isFinite(current.speed) ? Math.max(0, Math.round(current.speed * 3.6)) : 0;
   const firstStop = order.routeStops?.[0] || order;
 
@@ -1361,20 +1363,26 @@ function updateRouteBottomSheet(order, current, destination) {
   currentRouteStopId = firstStop?.id || order.id;
   currentRouteSchedule = firstStop?.schedule || order.schedule;
   const distanceMeters = destination ? distanceKm(current, destination) * 1000 : Infinity;
+  const hasArrived = distanceMeters <= 180;
+  if (bottomSheet) bottomSheet.classList.toggle("arrived", hasArrived);
   if (orderDetails) {
     const productsText = firstStop?.items?.map((item) => `${item.quantity} x ${item.name}`).join(" | ") || "Sin productos";
-    orderDetails.textContent = distanceMeters <= 180
+    orderDetails.hidden = !hasArrived;
+    orderDetails.textContent = hasArrived
       ? `${firstStop.customer || "Cliente"}: ${productsText}. Total ${money(firstStop.total || 0)}.`
       : `Siguiente entrega: ${firstStop.customer || "Cliente"} | ${productsText}`;
   }
   const phoneDigits = String(firstStop?.phone || "").replace(/\D/g, "");
+  if (deliveredButton) deliveredButton.hidden = !hasArrived;
   if (whatsAppButton) {
+    whatsAppButton.hidden = !hasArrived;
     whatsAppButton.href = phoneDigits.length >= 10
       ? `https://wa.me/52${phoneDigits.slice(-10)}?text=${encodeURIComponent("Hola, soy de NaturFreeze. Ya voy en camino con tu pedido.")}`
       : "#";
     whatsAppButton.classList.toggle("disabled", phoneDigits.length < 10);
   }
   if (callButton) {
+    callButton.hidden = !hasArrived;
     callButton.href = phoneDigits.length >= 10 ? `tel:${phoneDigits.slice(-10)}` : "#";
     callButton.classList.toggle("disabled", phoneDigits.length < 10);
   }
