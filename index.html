@@ -17,7 +17,7 @@
   <body>
     <div class="welcome-screen" id="welcomeScreen" aria-live="polite">
       <div class="welcome-card">
-        <img src="assets/logo-naturfreeze-cropped.jpg" alt="NaturFreeze Cancún">
+        <img src="assets/logo-naturfreeze-transparent.png" alt="NaturFreeze Cancún">
         <span>Bienvenido/a</span>
         <strong>¿List@ para ordenar?</strong>
       </div>
@@ -25,7 +25,7 @@
 
     <header class="site-header">
       <a class="brand sliding-logo" href="#inicio" aria-label="Naturfreeze inicio">
-        <img src="assets/logo-naturfreeze-mark.jpg" alt="Naturfreeze Cancún">
+        <img src="assets/logo-naturfreeze-mark-transparent.png" alt="Naturfreeze Cancún">
       </a>
       <nav class="nav-links" aria-label="Principal">
         <a href="#productos">Productos</a>
@@ -51,7 +51,7 @@
     <main>
       <section class="hero" id="inicio">
         <div class="hero-copy">
-          <img class="hero-logo" src="assets/logo-naturfreeze-cropped.jpg" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
+          <img class="hero-logo" src="assets/logo-naturfreeze-transparent.png" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
           <span class="eyebrow">Congelados premium en Cancún</span>
           <h1>Frescura que preserva lo esencial.</h1>
           <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atención directa por WhatsApp.</p>
@@ -301,7 +301,7 @@
         <section class="admin-dashboard" id="adminPos" hidden>
           <div class="admin-topbar">
             <div class="admin-operator">
-              <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze">
+              <img src="assets/logo-naturfreeze-mark-transparent.png" alt="NaturFreeze">
               <div>
                 <span>NaturFreeze Cancún</span>
                 <strong>Panel de tienda</strong>
@@ -320,7 +320,7 @@
                 <button class="admin-tab-orders" type="button" data-admin-view="orders" aria-label="Pedidos"><span></span></button>
                 <button class="admin-tab-products" type="button" data-admin-view="products" aria-label="Menú"><span></span></button>
                 <button class="admin-tab-finance" type="button" data-admin-view="finance" aria-label="Finanzas"><span></span></button>
-                <button class="admin-tab-notes" type="button" data-admin-view="notes" aria-label="Notas"><span></span></button>
+                <button class="admin-tab-settings" type="button" data-admin-view="settings" aria-label="Configuración"><span></span></button>
               </nav>
             </aside>
 
@@ -476,18 +476,28 @@
                 <div class="finance-table" id="financeTable"></div>
               </section>
 
-              <section class="admin-view" id="adminViewNotes" data-admin-panel="notes">
+              <section class="admin-view" id="adminViewSettings" data-admin-panel="settings">
                 <div class="admin-page-head">
-                  <h3>Notas</h3>
-                  <span>Recordatorios bonitos para operación diaria</span>
+                  <h3>Configuración</h3>
+                  <span>Horario y estado de operación de la tienda</span>
                 </div>
-                <div class="notes-board">
-                  <form class="note-form" id="noteForm">
-                    <input id="noteTitle" type="text" placeholder="Título de la nota">
-                    <textarea id="noteText" rows="4" placeholder="Ej. Revisar inventario de camarón antes de las 2 pm"></textarea>
-                    <button class="add-button" type="submit">Guardar nota</button>
+                <div class="settings-board">
+                  <form class="settings-form" id="storeSettingsForm">
+                    <label for="storeOpenTime">Hora de apertura</label>
+                    <input id="storeOpenTime" type="time" value="12:00">
+                    <label for="storeCloseTime">Hora de cierre</label>
+                    <input id="storeCloseTime" type="time" value="18:00">
+                    <label class="settings-toggle">
+                      <input id="storeManualClosed" type="checkbox">
+                      <span>Cerrar tienda manualmente</span>
+                    </label>
+                    <button class="add-button" type="submit">Guardar configuración</button>
                   </form>
-                  <div class="notes-list" id="notesList"></div>
+                  <div class="settings-preview">
+                    <span>Estado actual</span>
+                    <strong id="storeSettingsStatus">Actualmente abierta</strong>
+                    <p>Este horario queda guardado en la página para probar el panel.</p>
+                  </div>
                 </div>
               </section>
             </div>

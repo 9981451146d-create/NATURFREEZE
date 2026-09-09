@@ -2059,21 +2059,29 @@ textarea {
   background: currentColor;
 }
 
-.admin-tab-notes span {
+.admin-tab-settings span {
   width: 24px;
-  height: 28px;
+  height: 24px;
   border: 3px solid currentColor;
-  border-radius: 4px;
+  border-radius: 50%;
 }
 
-.admin-tab-notes span::after {
+.admin-tab-settings span::before {
   position: absolute;
-  right: -3px;
-  bottom: -3px;
-  width: 10px;
-  height: 10px;
+  inset: 6px;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+}
+
+.admin-tab-settings span::after {
+  position: absolute;
+  left: 9px;
+  top: -7px;
+  width: 4px;
+  height: 38px;
   background: currentColor;
-  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  border-radius: 999px;
+  transform: rotate(45deg);
 }
 
 .admin-main {
@@ -2431,14 +2439,17 @@ textarea {
   font-weight: 900;
 }
 
-.notes-board {
+.notes-board,
+.settings-board {
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
   gap: 18px;
 }
 
 .note-form,
-.note-card {
+.note-card,
+.settings-form,
+.settings-preview {
   display: grid;
   gap: 12px;
   padding: 18px;
@@ -2448,12 +2459,40 @@ textarea {
 }
 
 .note-form input,
-.note-form textarea {
+.note-form textarea,
+.settings-form input {
   width: 100%;
   min-height: 44px;
   padding: 12px;
   border: 1px solid #dfe5ec;
   border-radius: 10px;
+}
+
+.settings-form label,
+.settings-preview span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-toggle input {
+  width: 20px;
+  min-height: 20px;
+}
+
+.settings-preview strong {
+  color: #080b10;
+  font-size: 32px;
+}
+
+.store-status-pill.closed span {
+  background: #9ca3af;
 }
 
 .notes-list {
@@ -3683,6 +3722,56 @@ body.map-fullscreen-open {
   font-weight: 900;
 }
 
+.route-bottom-sheet {
+  gap: 14px;
+}
+
+.route-bottom-sheet small {
+  display: block;
+  max-width: 520px;
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.route-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.route-delivered-button,
+.route-chat-button,
+.route-call-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  color: white;
+  font-weight: 900;
+  background: #167a32;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.route-chat-button {
+  background: #18a558;
+}
+
+.route-call-button {
+  background: #0877c9;
+}
+
+.route-chat-button.disabled,
+.route-call-button.disabled {
+  pointer-events: none;
+  opacity: .45;
+}
+
 @media (max-width: 760px) {
   .confirm-detail-grid,
   .product-type-grid {
@@ -3760,5 +3849,151 @@ body.map-fullscreen-open {
   .finance-action-menu {
     left: auto;
     right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .welcome-card {
+    width: min(94vw, 420px);
+    padding: 26px 18px;
+  }
+
+  .welcome-card img {
+    width: min(320px, 82vw);
+    max-height: 140px;
+  }
+
+  .hero {
+    padding: 26px 14px 18px;
+  }
+
+  .hero-copy {
+    gap: 14px;
+  }
+
+  .hero-logo {
+    max-width: 260px;
+  }
+
+  .catalog-tools {
+    margin-inline: 12px;
+    padding: 12px;
+  }
+
+  .product-grid {
+    gap: 14px;
+    padding-inline: 12px;
+  }
+
+  .product-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+    min-height: auto;
+    border-radius: 14px;
+  }
+
+  .product-info {
+    gap: 10px;
+  }
+
+  .product-info p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  .price {
+    font-size: 22px;
+  }
+
+  .admin-shell {
+    padding: 0;
+  }
+
+  .admin-topbar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .admin-sidebar {
+    top: 0;
+    border-radius: 0;
+  }
+
+  .admin-main {
+    padding: 12px;
+  }
+
+  .admin-stats {
+    gap: 10px;
+  }
+
+  .admin-stats div {
+    min-height: 88px;
+    padding: 12px;
+  }
+
+  .admin-section-head,
+  .admin-page-head,
+  .menu-help-banner,
+  .admin-alert-card,
+  .sales-analysis-card,
+  .finance-table,
+  .settings-form,
+  .settings-preview {
+    border-radius: 14px;
+  }
+
+  .order-status-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .order-status-tabs button {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 0 14px;
+  }
+
+  .order-row {
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .order-row-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .order-row-actions button {
+    width: 100%;
+  }
+
+  .settings-board {
+    grid-template-columns: 1fr;
+  }
+
+  .route-bottom-sheet {
+    min-height: 190px;
+    align-items: start;
+  }
+
+  .route-bottom-sheet span {
+    max-width: none;
+  }
+
+  .route-contact-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .route-delivered-button {
+    grid-column: 1 / -1;
   }
 }

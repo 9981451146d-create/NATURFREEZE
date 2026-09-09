@@ -300,9 +300,15 @@ const PRODUCT_EDITS_KEY = "naturfreezeProductEdits";
 const CUSTOM_PRODUCTS_KEY = "naturfreezeCustomProducts";
 const ORDERS_KEY = "naturfreezeAdminOrders";
 const NOTES_KEY = "naturfreezeAdminNotes";
+const STORE_SETTINGS_KEY = "naturfreezeStoreSettings";
 let productEdits = readStored(PRODUCT_EDITS_KEY, {});
 let customProducts = readStored(CUSTOM_PRODUCTS_KEY, []);
 let adminOrders = readStored(ORDERS_KEY, []);
+let storeSettings = readStored(STORE_SETTINGS_KEY, {
+  openTime: "12:00",
+  closeTime: "18:00",
+  manualClosed: false
+});
 let adminNotes = readStored(NOTES_KEY, [
   { id: 1, title: "Inventario frío", text: "Revisar productos agotados antes de abrir pedidos.", color: "green" },
   { id: 2, title: "Rutas 2:00 pm", text: "Confirmar pedidos con ubicación exacta antes de salir.", color: "blue" },
@@ -366,6 +372,11 @@ const noteForm = document.querySelector("#noteForm");
 const noteTitle = document.querySelector("#noteTitle");
 const noteText = document.querySelector("#noteText");
 const notesList = document.querySelector("#notesList");
+const storeSettingsForm = document.querySelector("#storeSettingsForm");
+const storeOpenTime = document.querySelector("#storeOpenTime");
+const storeCloseTime = document.querySelector("#storeCloseTime");
+const storeManualClosed = document.querySelector("#storeManualClosed");
+const storeSettingsStatus = document.querySelector("#storeSettingsStatus");
 const productEditor = document.querySelector("#productEditor");
 const closeProductEditor = document.querySelector("#closeProductEditor");
 const editProductPreview = document.querySelector("#editProductPreview");
@@ -410,6 +421,8 @@ let adminRouteLastOrigin = null;
 let adminRouteLastRecalcAt = 0;
 let activeRouteStepIndex = 0;
 let adminRouteViewMode = "overview";
+let currentRouteStopId = null;
+let currentRouteSchedule = null;
 let cartStep = 1;
 let activeOrderStatusFilter = "preparing";
 let modalOrderId = null;
@@ -660,13 +673,38 @@ function playTone(frequency, start, duration, gain = 0.05, type = "sine") {
   oscillator.stop(context.currentTime + start + duration + 0.03);
 }
 
+function playIceCrack(start = 0) {
+  const context = getSoundContext();
+  if (!context || !soundUnlocked) return;
+  const noiseBuffer = context.createBuffer(1, context.sampleRate * 0.16, context.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  for (let index = 0; index < output.length; index += 1) {
+    output[index] = (Math.random() * 2 - 1) * (1 - index / output.length);
+  }
+  const source = context.createBufferSource();
+  const filter = context.createBiquadFilter();
+  const volume = context.createGain();
+  filter.type = "highpass";
+  filter.frequency.value = 1800;
+  volume.gain.setValueAtTime(0.0001, context.currentTime + start);
+  volume.gain.exponentialRampToValueAtTime(0.075, context.currentTime + start + 0.01);
+  volume.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + start + 0.16);
+  source.buffer = noiseBuffer;
+  source.connect(filter);
+  filter.connect(volume);
+  volume.connect(context.destination);
+  source.start(context.currentTime + start);
+  source.stop(context.currentTime + start + 0.18);
+}
+
 function playSound(type = "tap") {
   if (!soundUnlocked) return;
 
   if (type === "welcome") {
-    playTone(523.25, 0, 0.12, 0.045);
-    playTone(659.25, 0.10, 0.14, 0.045);
-    playTone(783.99, 0.22, 0.20, 0.05);
+    playIceCrack(0);
+    playTone(987.77, 0.02, 0.10, 0.035, "triangle");
+    playTone(1318.51, 0.12, 0.16, 0.035, "sine");
+    playTone(1760, 0.26, 0.18, 0.028, "sine");
     return;
   }
 
@@ -875,6 +913,42 @@ function logoutAdmin() {
   adminPos.hidden = true;
 }
 
+function isStoreOpenNow() {
+  if (storeSettings.manualClosed) return false;
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [openHour, openMinute] = (storeSettings.openTime || "12:00").split(":").map(Number);
+  const [closeHour, closeMinute] = (storeSettings.closeTime || "18:00").split(":").map(Number);
+  const openMinutes = openHour * 60 + openMinute;
+  const closeMinutes = closeHour * 60 + closeMinute;
+  return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+}
+
+function renderStoreSettings() {
+  if (storeOpenTime) storeOpenTime.value = storeSettings.openTime || "12:00";
+  if (storeCloseTime) storeCloseTime.value = storeSettings.closeTime || "18:00";
+  if (storeManualClosed) storeManualClosed.checked = Boolean(storeSettings.manualClosed);
+  const isOpen = isStoreOpenNow();
+  const statusText = isOpen ? "Actualmente abierta" : "Actualmente cerrada";
+  document.querySelectorAll(".store-status-pill").forEach((pill) => {
+    pill.classList.toggle("closed", !isOpen);
+    pill.innerHTML = `<span></span> ${statusText}`;
+  });
+  if (storeSettingsStatus) storeSettingsStatus.textContent = statusText;
+}
+
+function saveStoreSettings(event) {
+  event.preventDefault();
+  storeSettings = {
+    openTime: storeOpenTime?.value || "12:00",
+    closeTime: storeCloseTime?.value || "18:00",
+    manualClosed: Boolean(storeManualClosed?.checked)
+  };
+  writeStored(STORE_SETTINGS_KEY, storeSettings);
+  renderStoreSettings();
+  showToast("Configuración guardada.");
+}
+
 function addPosItem() {
   const product = products.find((item) => item.id === adminProduct.value);
   const quantity = Math.max(1, Number(adminQuantity.value) || 1);
@@ -942,7 +1016,7 @@ function renderAdminDashboard() {
   renderAdminProductCards();
   renderAdminStats();
   renderFinance();
-  renderNotes();
+  renderStoreSettings();
 }
 
 function renderAdminStats() {
@@ -1121,6 +1195,12 @@ function renderScheduleDetail(schedule, orders) {
             <div>
               <strong id="routeEta">Calculando...</strong>
               <span id="routeDestinationText">Entrega NaturFreeze</span>
+              <small id="routeOrderDetails">Los detalles del pedido aparecerán aquí al acercarte.</small>
+            </div>
+            <div class="route-contact-actions">
+              <button class="route-delivered-button" type="button" data-route-deliver-current>Pedido entregado</button>
+              <a class="route-chat-button" id="routeWhatsAppButton" href="#" target="_blank" rel="noreferrer">WhatsApp</a>
+              <a class="route-call-button" id="routeCallButton" href="#">Llamar</a>
             </div>
           </div>
         </div>
@@ -1157,9 +1237,14 @@ function openDeliveryRouteForSchedule(schedule) {
     .map((item) => ({
       id: item.id,
       customer: item.customer,
+      phone: item.phone,
       address: item.address,
+      payment: item.payment,
+      items: item.items,
       schedule: item.schedule,
       total: item.total,
+      subtotal: item.subtotal,
+      shipping: item.shipping,
       coords: item.coords
     }));
   const routeOrder = { ...order, routeStops };
@@ -1223,6 +1308,8 @@ function resetAdminRouteMap() {
   adminRouteLastRecalcAt = 0;
   activeRouteStepIndex = 0;
   adminRouteViewMode = "overview";
+  currentRouteStopId = null;
+  currentRouteSchedule = null;
 }
 
 function getRouteEstimate(kilometers) {
@@ -1253,7 +1340,11 @@ function updateRouteBottomSheet(order, current, destination) {
   const speedText = document.querySelector("#routeSpeed");
   const etaText = document.querySelector("#routeEta");
   const destinationText = document.querySelector("#routeDestinationText");
+  const orderDetails = document.querySelector("#routeOrderDetails");
+  const whatsAppButton = document.querySelector("#routeWhatsAppButton");
+  const callButton = document.querySelector("#routeCallButton");
   const speedKmh = Number.isFinite(current.speed) ? Math.max(0, Math.round(current.speed * 3.6)) : 0;
+  const firstStop = order.routeStops?.[0] || order;
 
   if (speedText) speedText.textContent = speedKmh;
 
@@ -1264,8 +1355,28 @@ function updateRouteBottomSheet(order, current, destination) {
   }
 
   if (destinationText) {
-    const firstStop = order.routeStops?.[0];
     destinationText.textContent = firstStop?.address || order.address || "Entrega NaturFreeze";
+  }
+
+  currentRouteStopId = firstStop?.id || order.id;
+  currentRouteSchedule = firstStop?.schedule || order.schedule;
+  const distanceMeters = destination ? distanceKm(current, destination) * 1000 : Infinity;
+  if (orderDetails) {
+    const productsText = firstStop?.items?.map((item) => `${item.quantity} x ${item.name}`).join(" | ") || "Sin productos";
+    orderDetails.textContent = distanceMeters <= 180
+      ? `${firstStop.customer || "Cliente"}: ${productsText}. Total ${money(firstStop.total || 0)}.`
+      : `Siguiente entrega: ${firstStop.customer || "Cliente"} | ${productsText}`;
+  }
+  const phoneDigits = String(firstStop?.phone || "").replace(/\D/g, "");
+  if (whatsAppButton) {
+    whatsAppButton.href = phoneDigits.length >= 10
+      ? `https://wa.me/52${phoneDigits.slice(-10)}?text=${encodeURIComponent("Hola, soy de NaturFreeze. Ya voy en camino con tu pedido.")}`
+      : "#";
+    whatsAppButton.classList.toggle("disabled", phoneDigits.length < 10);
+  }
+  if (callButton) {
+    callButton.href = phoneDigits.length >= 10 ? `tel:${phoneDigits.slice(-10)}` : "#";
+    callButton.classList.toggle("disabled", phoneDigits.length < 10);
   }
 }
 
@@ -1605,6 +1716,34 @@ function markOrderDelivered(id, detected = false) {
   switchAdminView("orders");
   renderAdminDashboard();
   showToast("Pedido entregado y agregado al punto de venta.");
+}
+
+function markCurrentRouteStopDelivered() {
+  if (!currentRouteStopId) {
+    showToast("Todavía no hay una entrega seleccionada en la ruta.");
+    return;
+  }
+  const schedule = currentRouteSchedule;
+  markOrderDelivered(currentRouteStopId, true);
+  const nextOrder = adminOrders.find((order) => (
+    order.status === "Confirmado" &&
+    order.schedule === schedule &&
+    String(order.id) !== String(currentRouteStopId) &&
+    order.coords
+  ));
+  if (nextOrder) {
+    window.setTimeout(() => {
+      activeRouteSchedule = schedule;
+      openDeliveryRouteForSchedule(schedule);
+      showToast("Siguiente entrega cargada.");
+    }, 250);
+  } else {
+    currentRouteStopId = null;
+    currentRouteSchedule = null;
+    stopAdminRouteTracking();
+    resetAdminRouteMap();
+    showToast("Todas las entregas de este horario quedaron listas.");
+  }
 }
 
 function cancelOrder(id) {
@@ -2823,6 +2962,7 @@ document.querySelectorAll("[data-order-status-filter]").forEach((button) => {
   });
 });
 if (noteForm) noteForm.addEventListener("submit", addNote);
+if (storeSettingsForm) storeSettingsForm.addEventListener("submit", saveStoreSettings);
 if (notesList) {
   notesList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-delete-note]");
@@ -2846,6 +2986,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   const printTicketButton = event.target.closest("[data-print-ticket]");
   const routeViewButton = event.target.closest("[data-route-view]");
   const routeFullscreenButton = event.target.closest("[data-route-fullscreen]");
+  const routeDeliverCurrentButton = event.target.closest("[data-route-deliver-current]");
 
   if (openButton) {
     const id = openButton.dataset.openOrder;
@@ -2870,6 +3011,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   if (printTicketButton) printTicket(printTicketButton.dataset.printTicket);
   if (routeViewButton) setRouteViewMode(routeViewButton.dataset.routeView);
   if (routeFullscreenButton) toggleRouteFullscreen();
+  if (routeDeliverCurrentButton) markCurrentRouteStopDelivered();
 });
 adminDrawer.addEventListener("click", (event) => {
   if (event.target === adminDrawer) closeAdmin();
