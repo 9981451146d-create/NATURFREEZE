@@ -897,9 +897,11 @@ function renderPosSale() {
   renderAdminStats();
 
   if (!deliveredOrders.length) {
-    posLines.innerHTML = '<p class="cart-note">Aun no hay ventas entregadas.</p>';
+    if (posLines) posLines.innerHTML = '<p class="cart-note">Aun no hay ventas entregadas.</p>';
     return;
   }
+
+  if (!posLines) return;
 
   posLines.innerHTML = deliveredOrders.map((order) => `
     <article class="sale-ticket">
@@ -1599,7 +1601,8 @@ function markOrderDelivered(id, detected = false) {
     };
   });
   writeStored(ORDERS_KEY, adminOrders);
-  switchAdminView("pos");
+  activeOrderStatusFilter = "delivered";
+  switchAdminView("orders");
   renderAdminDashboard();
   showToast("Pedido entregado y agregado al punto de venta.");
 }
@@ -1694,7 +1697,8 @@ function markScheduleDelivered(schedule, detected = false) {
   stopAdminRouteTracking();
   resetAdminRouteMap();
   activeRouteSchedule = null;
-  switchAdminView("pos");
+  activeOrderStatusFilter = "delivered";
+  switchAdminView("orders");
   renderAdminDashboard();
   showToast(`Horario ${schedule} entregado y agregado al punto de venta.`);
 }
@@ -2730,7 +2734,8 @@ if (payHereButton) {
 }
 document.querySelector("#adminLoginButton").addEventListener("click", loginAdmin);
 document.querySelector("#adminLogout").addEventListener("click", logoutAdmin);
-document.querySelector("#clearPos").addEventListener("click", clearPosSale);
+const clearPosButton = document.querySelector("#clearPos");
+if (clearPosButton) clearPosButton.addEventListener("click", clearPosSale);
 document.querySelector("#clearOrders").addEventListener("click", clearWebOrders);
 document.querySelector("#saveProductEdit").addEventListener("click", saveProductEdit);
 document.querySelector("#resetProductEdits").addEventListener("click", resetProductEdits);
