@@ -175,6 +175,7 @@ const editProduct = document.querySelector("#editProduct");
 const editProductCategory = document.querySelector("#editProductCategory");
 const editProductName = document.querySelector("#editProductName");
 const editProductPrice = document.querySelector("#editProductPrice");
+const editProductStock = document.querySelector("#editProductStock");
 const editProductPresentation = document.querySelector("#editProductPresentation");
 const editProductImage = document.querySelector("#editProductImage");
 const editProductUpload = document.querySelector("#editProductUpload");
@@ -198,6 +199,8 @@ let adminRouteRequesting = false;
 let adminRouteLoadedFor = null;
 let adminRouteSummary = null;
 let adminRouteSteps = [];
+let adminRouteLastOrigin = null;
+let adminRouteLastRecalcAt = 0;
 let activeRouteStepIndex = 0;
 let adminRouteViewMode = "overview";
 let cartStep = 1;
@@ -276,8 +279,9 @@ function subscribeFirebaseProducts() {
           category: product.category || "general",
           name: product.name || "Producto NaturFreeze",
           price: Number(product.price) || 0,
+          stock: Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999,
           presentation: product.presentation || "1 pieza",
-          image: product.image || "assets/logo-naturfreeze-mark-transparent.png",
+          image: product.image || "assets/logo-naturfreeze-mark.jpg",
           detail: product.detail || "Producto NaturFreeze."
         });
       });
@@ -332,6 +336,28 @@ function saveProductToFirebase(product) {
     showToast("Producto guardado localmente, pero Firebase no respondió.");
     return false;
   });
+}
+
+function updateProductStock(productId, nextStock) {
+  const product = products.find((item) => item.id === productId);
+  if (!product) return;
+
+  product.stock = Math.max(0, nextStock);
+  productEdits[product.id] = {
+    ...(productEdits[product.id] || {}),
+    stock: product.stock
+  };
+  writeStored(PRODUCT_EDITS_KEY, productEdits);
+  saveProductToFirebase(product);
+}
+
+function reduceInventoryForOrder(rows) {
+  rows.forEach((row) => {
+    const currentStock = Number.isFinite(Number(row.stock)) ? Number(row.stock) : 999;
+    updateProductStock(row.id, currentStock - row.quantity);
+  });
+  renderProducts();
+  renderAdminDashboard();
 }
 
 function updateOrderInFirebase(id, updates) {
@@ -798,9 +824,9 @@ function renderScheduleDetail(schedule, orders) {
         <div class="admin-navigation">
           <div class="admin-route-map" id="adminRouteMap" aria-label="Mapa interno de entrega"></div>
           <div class="route-view-actions route-map-actions">
-            <button class="active" type="button" data-route-view="overview" aria-label="Ver ruta completa">Ruta</button>
-            <button type="button" data-route-view="close" aria-label="Vista cercana">Cerca</button>
-            <button type="button" data-route-fullscreen aria-label="Pantalla completa">Pantalla</button>
+            <button class="active route-icon-button route-icon-route" type="button" data-route-view="overview" aria-label="Ver ruta completa"><span></span></button>
+            <button class="route-icon-button route-icon-near" type="button" data-route-view="close" aria-label="Vista cercana"><span></span></button>
+            <button class="route-icon-button route-icon-fullscreen" type="button" data-route-fullscreen aria-label="Pantalla completa"><span></span></button>
           </div>
           <div class="route-steps-card" id="routeStepsCard">
             <span class="route-turn-icon" aria-hidden="true"></span>
@@ -914,6 +940,8 @@ function resetAdminRouteMap() {
   adminRouteLoadedFor = null;
   adminRouteSummary = null;
   adminRouteSteps = [];
+  adminRouteLastOrigin = null;
+  adminRouteLastRecalcAt = 0;
   activeRouteStepIndex = 0;
   adminRouteViewMode = "overview";
 }
@@ -960,6 +988,29 @@ function updateRouteBottomSheet(order, current, destination) {
     const firstStop = order.routeStops?.[0];
     destinationText.textContent = firstStop?.address || order.address || "Entrega NaturFreeze";
   }
+}
+
+function sortStopsByNearest(current, stops) {
+  const remaining = [...stops];
+  const sorted = [];
+  let origin = { lat: current.lat, lng: current.lng };
+
+  while (remaining.length) {
+    const nearestIndex = remaining
+      .map((stop, index) => ({ index, kilometers: distanceKm(origin, stop.coords) }))
+      .sort((a, b) => a.kilometers - b.kilometers)[0].index;
+    const [nearest] = remaining.splice(nearestIndex, 1);
+    sorted.push(nearest);
+    origin = nearest.coords;
+  }
+
+  return sorted;
+}
+
+function distanceToRouteMeters(current, points) {
+  if (!points?.length) return Infinity;
+  const currentCoords = { lat: current.lat, lng: current.lng };
+  return Math.min(...points.map(([lat, lng]) => distanceKm(currentCoords, { lat, lng }) * 1000));
 }
 
 function pointToCoords(point) {
@@ -1099,6 +1150,10 @@ function renderAdminRouteMap(order, current) {
     return;
   }
 
+  if (order.routeStops?.length) {
+    order.routeStops = sortStopsByNearest(current, order.routeStops);
+  }
+
   const destinations = getRouteDestinations(order);
   const destination = destinations[0] || null;
   updateRouteBottomSheet(order, current, destination);
@@ -1162,6 +1217,18 @@ function renderAdminRouteMap(order, current) {
     }).addTo(adminRouteMap);
   }
 
+  const movedSinceRoute = adminRouteLastOrigin
+    ? distanceKm({ lat: current.lat, lng: current.lng }, adminRouteLastOrigin) * 1000
+    : Infinity;
+  const offRouteMeters = adminRouteLine && adminRouteLoadedFor
+    ? distanceToRouteMeters(current, adminRouteLine.getLatLngs().map((point) => [point.lat, point.lng]))
+    : 0;
+  const canRecalculate = Date.now() - adminRouteLastRecalcAt > 18000;
+  if (adminRouteLoadedFor && canRecalculate && (movedSinceRoute > 220 || offRouteMeters > 120)) {
+    adminRouteLoadedFor = null;
+    adminRouteSummary = null;
+  }
+
   if (!adminRouteLoadedFor && !adminRouteRequesting) {
     loadOpenRouteLine(order, current, destinations);
   }
@@ -1178,6 +1245,8 @@ async function loadOpenRouteLine(order, current, destinations) {
   const lastDestination = destinations[destinations.length - 1];
   const routeKey = `${order.id}:${order.schedule}:${formatCoord(current.lat)},${formatCoord(current.lng)}:${destinations.length}:${formatCoord(lastDestination.lat)},${formatCoord(lastDestination.lng)}`;
   adminRouteRequesting = true;
+  adminRouteLastRecalcAt = Date.now();
+  adminRouteLastOrigin = { lat: current.lat, lng: current.lng };
 
   try {
     const route = await fetchOpenRouteGeometry(current, destinations);
@@ -1341,6 +1410,7 @@ function loadProductEditor(id) {
   editProductCategory.value = product.category;
   editProductName.value = product.name;
   editProductPrice.value = product.price;
+  editProductStock.value = Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999;
   editProductPresentation.value = product.presentation;
   editProductImage.value = product.image;
   editProductDetail.value = product.detail;
@@ -1351,6 +1421,7 @@ function startNewProduct() {
   editProductCategory.value = "";
   editProductName.value = "";
   editProductPrice.value = "";
+  editProductStock.value = "";
   editProductPresentation.value = "";
   editProductImage.value = "";
   editProductDetail.value = "";
@@ -1371,8 +1442,9 @@ function saveProductEdit() {
     category: editProductCategory.value.trim() || "general",
     name: editProductName.value.trim() || existingProduct.name || "Producto nuevo",
     price: Math.max(0, Number(editProductPrice.value) || 0),
+    stock: Math.max(0, Number(editProductStock.value) || 0),
     presentation: editProductPresentation.value.trim() || existingProduct.presentation || "1 pieza",
-    image: editProductImage.value.trim() || existingProduct.image || "assets/logo-naturfreeze-mark-transparent.png",
+    image: editProductImage.value.trim() || existingProduct.image || "assets/logo-naturfreeze-mark.jpg",
     detail: editProductDetail.value.trim() || existingProduct.detail || "Producto NaturFreeze."
   };
 
@@ -1432,11 +1504,11 @@ function renderAdminProductCards() {
   if (!adminProductCards) return;
 
   adminProductCards.innerHTML = products.map((product) => `
-    <article class="admin-product-card">
+    <article class="admin-product-card ${Number(product.stock) <= 0 ? "sold-out" : ""}">
       <img src="${product.image}" alt="${product.name}">
       <div>
         <h4>${product.name}</h4>
-        <p>${product.presentation} | ${product.category}</p>
+        <p>${product.presentation} | ${product.category} | Inventario: ${Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999}</p>
         <p>${product.detail}</p>
       </div>
       <div class="admin-product-actions">
@@ -1466,12 +1538,15 @@ function renderProducts() {
 
   productGrid.innerHTML = visibleProducts.map((product) => {
     const quantity = cart.get(product.id) || 0;
+    const stock = Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999;
+    const soldOut = stock <= 0;
     const status = quantity ? `<span class="quantity-pill">En pedido: ${quantity}</span>` : "";
     return `
-      <article class="product-card">
+      <article class="product-card ${soldOut ? "sold-out" : ""}">
         <div class="product-image-wrap">
           <img src="${product.image}" alt="${product.name}">
           ${status}
+          ${soldOut ? '<span class="sold-out-pill">Agotado</span>' : ""}
         </div>
         <div class="product-info">
           <div>
@@ -1483,8 +1558,8 @@ function renderProducts() {
           </div>
           <p>${product.detail}</p>
           <div class="price">${money(product.price)}</div>
-          <button class="add-button" type="button" data-product="${product.id}">
-            ${quantity ? "Agregar otro" : "Agregar a mis pedidos"}
+          <button class="add-button" type="button" data-product="${product.id}" ${soldOut ? "disabled" : ""}>
+            ${soldOut ? "Agotado" : quantity ? "Agregar otro" : "Agregar a mis pedidos"}
           </button>
         </div>
       </article>
@@ -1495,8 +1570,9 @@ function renderProducts() {
 function getCartRows() {
   return [...cart.entries()].map(([id, quantity]) => {
     const product = products.find((item) => item.id === id);
+    if (!product) return null;
     return { ...product, quantity, subtotal: product.price * quantity };
-  });
+  }).filter(Boolean);
 }
 
 function getSubtotal() {
@@ -1540,7 +1616,22 @@ function renderCart() {
 }
 
 function addToCart(id) {
-  cart.set(id, (cart.get(id) || 0) + 1);
+  const product = products.find((item) => item.id === id);
+  if (!product) return;
+  const stock = Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999;
+  const nextQuantity = (cart.get(id) || 0) + 1;
+
+  if (stock <= 0) {
+    showToast("Producto agotado por ahora.");
+    return;
+  }
+
+  if (nextQuantity > stock) {
+    showToast(`Solo quedan ${stock} disponible(s).`);
+    return;
+  }
+
+  cart.set(id, nextQuantity);
   renderCart();
   playSound("success");
   showToast("Producto agregado a mis pedidos.");
@@ -1548,8 +1639,14 @@ function addToCart(id) {
 
 function changeQuantity(id, amount) {
   const nextQuantity = (cart.get(id) || 0) + amount;
+  const product = products.find((item) => item.id === id);
+  const stock = product && Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999;
+
   if (nextQuantity <= 0) {
     cart.delete(id);
+  } else if (nextQuantity > stock) {
+    showToast(`Solo quedan ${stock} disponible(s).`);
+    return;
   } else {
     cart.set(id, nextQuantity);
   }
@@ -1790,11 +1887,13 @@ function sendOrder() {
     subtotal,
     total,
     items: rows.map((row) => ({
+      id: row.id,
       name: row.name,
       quantity: row.quantity,
       subtotal: row.subtotal
     }))
   });
+  reduceInventoryForOrder(rows);
 
   playSound("success");
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noreferrer");

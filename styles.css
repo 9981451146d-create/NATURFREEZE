@@ -154,6 +154,7 @@ textarea {
   height: 62px;
   object-fit: contain;
   object-position: left center;
+  mix-blend-mode: multiply;
 }
 
 .sliding-logo {
@@ -288,6 +289,7 @@ textarea {
   display: block;
   width: min(430px, 92vw);
   margin: 0 0 20px;
+  mix-blend-mode: multiply;
 }
 
 .hero-actions,
@@ -494,6 +496,14 @@ textarea {
   box-shadow: 0 12px 30px rgba(5, 31, 58, .06);
 }
 
+.product-card.sold-out {
+  opacity: .72;
+}
+
+.product-card.sold-out img {
+  filter: grayscale(.85);
+}
+
 .product-card img {
   width: 100%;
   aspect-ratio: 3 / 4;
@@ -512,6 +522,18 @@ textarea {
   padding: 7px 10px;
   color: white;
   background: rgba(6, 40, 77, .92);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sold-out-pill {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  padding: 7px 10px;
+  color: white;
+  background: rgba(16, 32, 51, .92);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 900;
@@ -553,6 +575,12 @@ textarea {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 900;
+}
+
+.add-button:disabled {
+  cursor: not-allowed;
+  background: #9aa7b4;
+  box-shadow: none;
 }
 
 .add-button:active,
@@ -1544,6 +1572,11 @@ textarea {
   border-radius: 10px;
 }
 
+.admin-product-card.sold-out {
+  border-color: #f0b3b3;
+  background: #fff8f8;
+}
+
 .pos-tools h3,
 .pos-summary h3,
 .product-editor h3 {
@@ -1707,12 +1740,12 @@ textarea {
   top: 18px;
   z-index: 520;
   display: grid;
-  width: 92px;
+  width: 54px;
 }
 
 .route-view-actions button {
-  min-height: 40px;
-  padding: 0 10px;
+  min-height: 54px;
+  padding: 0;
   color: var(--navy);
   font-weight: 900;
   background: white;
@@ -1720,6 +1753,95 @@ textarea {
   border-radius: 12px;
   box-shadow: 0 12px 28px rgba(5, 31, 58, .14);
   cursor: pointer;
+}
+
+.route-icon-button {
+  display: grid;
+  place-items: center;
+}
+
+.route-icon-button span,
+.route-icon-button span::before,
+.route-icon-button span::after {
+  position: relative;
+  display: block;
+  content: "";
+}
+
+.route-icon-route span {
+  width: 26px;
+  height: 26px;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+.route-icon-route span::before {
+  position: absolute;
+  left: 2px;
+  bottom: -3px;
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.route-icon-route span::after {
+  position: absolute;
+  right: -2px;
+  top: -5px;
+  width: 0;
+  height: 0;
+  border-right: 8px solid transparent;
+  border-bottom: 15px solid currentColor;
+  border-left: 8px solid transparent;
+  transform: rotate(45deg);
+}
+
+.route-icon-near span {
+  width: 0;
+  height: 0;
+  border-right: 10px solid transparent;
+  border-bottom: 28px solid currentColor;
+  border-left: 10px solid transparent;
+  transform: translateY(-2px);
+}
+
+.route-icon-near span::after {
+  position: absolute;
+  left: -5px;
+  bottom: -24px;
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.route-icon-fullscreen span {
+  width: 27px;
+  height: 27px;
+}
+
+.route-icon-fullscreen span::before,
+.route-icon-fullscreen span::after {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-color: currentColor;
+}
+
+.route-icon-fullscreen span::before {
+  top: 0;
+  left: 0;
+  border-top: 3px solid;
+  border-left: 3px solid;
+}
+
+.route-icon-fullscreen span::after {
+  right: 0;
+  bottom: 0;
+  border-right: 3px solid;
+  border-bottom: 3px solid;
 }
 
 .route-view-actions button.active {
@@ -2253,12 +2375,11 @@ body.map-fullscreen-open {
   .route-map-actions {
     top: 118px;
     right: 12px;
-    width: 82px;
+    width: 48px;
   }
 
   .route-map-actions button {
-    min-height: 38px;
-    font-size: 12px;
+    min-height: 48px;
   }
 
   .route-steps-card > strong {

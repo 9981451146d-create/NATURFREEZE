@@ -7,7 +7,7 @@
     <meta name="description" content="Tienda de productos congelados Naturfreeze Cancún con carrito, entregas locales y pedidos por WhatsApp.">
     <meta name="theme-color" content="#101923">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="assets/logo-naturfreeze-mark-transparent.png">
+    <link rel="apple-touch-icon" href="assets/logo-naturfreeze-mark.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
   <body>
     <div class="welcome-screen" id="welcomeScreen" aria-live="polite">
       <div class="welcome-card">
-        <img src="assets/logo-naturfreeze-transparent.png" alt="NaturFreeze Cancún">
+        <img src="assets/logo-naturfreeze-cropped.jpg" alt="NaturFreeze Cancún">
         <span>Bienvenido/a</span>
         <strong>¿List@ para ordenar?</strong>
       </div>
@@ -25,7 +25,7 @@
 
     <header class="site-header">
       <a class="brand sliding-logo" href="#inicio" aria-label="Naturfreeze inicio">
-        <img src="assets/logo-naturfreeze-mark-transparent.png" alt="Naturfreeze Cancún">
+        <img src="assets/logo-naturfreeze-mark.jpg" alt="Naturfreeze Cancún">
       </a>
       <nav class="nav-links" aria-label="Principal">
         <a href="#productos">Productos</a>
@@ -51,7 +51,7 @@
     <main>
       <section class="hero" id="inicio">
         <div class="hero-copy">
-          <img class="hero-logo" src="assets/logo-naturfreeze-transparent.png" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
+          <img class="hero-logo" src="assets/logo-naturfreeze-cropped.jpg" alt="Naturfreeze Cancún, frescura que preserva lo esencial">
           <span class="eyebrow">Congelados premium en Cancún</span>
           <h1>Frescura que preserva lo esencial.</h1>
           <p>Compra productos congelados para hogar, hotel, oficina o negocio con entrega local y atención directa por WhatsApp.</p>
@@ -286,7 +286,7 @@
         <button class="icon-button admin-close" id="closeAdmin" type="button" aria-label="Salir del administrador">Salir</button>
 
         <section class="admin-login-card" id="adminLogin">
-          <img src="assets/logo-naturfreeze-mark-transparent.png" alt="NaturFreeze Cancun">
+          <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze Cancun">
           <span class="eyebrow">Acceso administrador</span>
           <h2 id="adminTitle">Iniciar sesion</h2>
           <p>Entra al panel interno para usar el punto de venta de NaturFreeze.</p>
@@ -298,7 +298,7 @@
         <section class="admin-dashboard" id="adminPos" hidden>
           <div class="admin-topbar">
             <div class="admin-operator">
-              <img src="assets/logo-naturfreeze-mark-transparent.png" alt="NaturFreeze">
+              <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze">
               <div>
                 <span>Admin conectado</span>
                 <strong>NaturFreeze POS</strong>
@@ -394,6 +394,8 @@
                     <input id="editProductName" type="text">
                     <label for="editProductPrice">Precio</label>
                     <input id="editProductPrice" type="number" min="0">
+                    <label for="editProductStock">Inventario disponible</label>
+                    <input id="editProductStock" type="number" min="0" placeholder="0 = agotado">
                     <label for="editProductPresentation">Presentacion</label>
                     <input id="editProductPresentation" type="text">
                     <label for="editProductImage">Imagen</label>
