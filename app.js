@@ -366,6 +366,16 @@ const noteForm = document.querySelector("#noteForm");
 const noteTitle = document.querySelector("#noteTitle");
 const noteText = document.querySelector("#noteText");
 const notesList = document.querySelector("#notesList");
+const productEditor = document.querySelector("#productEditor");
+const closeProductEditor = document.querySelector("#closeProductEditor");
+const editProductPreview = document.querySelector("#editProductPreview");
+const orderConfirmModal = document.querySelector("#orderConfirmModal");
+const orderConfirmDetails = document.querySelector("#orderConfirmDetails");
+const closeOrderModal = document.querySelector("#closeOrderModal");
+const approveOrderFromModal = document.querySelector("#approveOrderFromModal");
+const cancelOrderFromModal = document.querySelector("#cancelOrderFromModal");
+const financePeriod = document.querySelector("#financePeriod");
+const printFinance = document.querySelector("#printFinance");
 const adminOrdersElement = document.querySelector("#adminOrders");
 const adminProductCards = document.querySelector("#adminProductCards");
 const editProduct = document.querySelector("#editProduct");
@@ -402,6 +412,7 @@ let activeRouteStepIndex = 0;
 let adminRouteViewMode = "overview";
 let cartStep = 1;
 let activeOrderStatusFilter = "preparing";
+let modalOrderId = null;
 let soundContext = null;
 let soundUnlocked = false;
 let welcomeSoundPlayed = false;
@@ -890,14 +901,22 @@ function renderPosSale() {
   }
 
   posLines.innerHTML = deliveredOrders.map((order) => `
-    <div class="pos-line">
-      <div>
-        <strong>${order.customer}</strong>
-        <small>${order.items.map((item) => `${item.quantity} x ${item.name}`).join(" | ")}</small>
-        <small>${order.deliveredAt || order.date}</small>
+    <article class="sale-ticket">
+      <div class="ticket-head">
+        <strong>NaturFreeze</strong>
+        <span>Ticket #${order.id}</span>
       </div>
-      <strong>${money(order.total)}</strong>
-    </div>
+      <p>${order.deliveredAt || order.date}</p>
+      <div class="ticket-customer">
+        <b>${order.customer}</b>
+        <span>${order.phone || "Sin teléfono"}</span>
+      </div>
+      <ul>
+        ${order.items.map((item) => `<li><span>${item.quantity} x ${item.name}</span><b>${money(item.subtotal || 0)}</b></li>`).join("")}
+      </ul>
+      <div class="ticket-total"><span>Total</span><strong>${money(order.total)}</strong></div>
+      <button class="copy-button" type="button" data-print-ticket="${order.id}">Imprimir ticket</button>
+    </article>
   `).join("");
 }
 
@@ -966,13 +985,14 @@ function saveWebOrder(order) {
 function renderAdminOrders() {
   if (!adminOrdersElement) return;
 
-  const pendingOrders = adminOrders.filter((order) => !["Entregado", "Cancelado"].includes(order.status));
+  const preparingOrders = adminOrders.filter((order) => !order.status || order.status === "Pendiente");
+  const deliveringOrders = adminOrders.filter((order) => order.status === "Confirmado");
   const deliveredOrders = adminOrders.filter((order) => order.status === "Entregado");
   const canceledOrders = adminOrders.filter((order) => order.status === "Cancelado");
   const schedules = ["2:00 pm", "6:00 pm"];
 
   if (activeOrderStatusFilter === "delivering") {
-    adminOrdersElement.innerHTML = schedules.map((schedule) => renderScheduleCard(schedule, pendingOrders)).join("");
+    adminOrdersElement.innerHTML = schedules.map((schedule) => renderScheduleCard(schedule, deliveringOrders)).join("");
   } else if (activeOrderStatusFilter === "delivered") {
     adminOrdersElement.innerHTML = renderOrderList(deliveredOrders, "No hay pedidos entregados hoy.");
   } else if (activeOrderStatusFilter === "canceled") {
@@ -983,7 +1003,7 @@ function renderAdminOrders() {
         <strong>Pedidos en preparación</strong>
         <span>Confirma cada pedido, revisa la ubicación y después entra a Entregando para iniciar ruta.</span>
       </div>
-      ${renderOrderList(pendingOrders, "No hay pedidos en preparación.")}
+      ${renderOrderList(preparingOrders, "No hay pedidos en preparación.")}
     `;
   }
 
@@ -1034,7 +1054,8 @@ function renderOrderList(orders, emptyText) {
           <b>${money(order.total)}</b>
           <em>${order.status || "Preparando"}</em>
           <div class="order-row-actions">
-            ${order.status === "Entregado" ? "" : `<button class="copy-button" type="button" data-route-order="${order.id}">Entrar</button>`}
+            ${(!order.status || order.status === "Pendiente") ? `<button class="copy-button" type="button" data-confirm-order="${order.id}">Confirmar</button>` : ""}
+            ${order.status === "Confirmado" ? `<button class="copy-button" type="button" data-route-order="${order.id}">Entrar</button>` : ""}
             ${order.status === "Cancelado" || order.status === "Entregado" ? "" : `<button class="secondary-action" type="button" data-cancel-order="${order.id}">Cancelar</button>`}
           </div>
         </article>
@@ -1121,14 +1142,14 @@ function openDeliveryRoute(id) {
 }
 
 function openDeliveryRouteForSchedule(schedule) {
-  const orders = adminOrders.filter((item) => item.status !== "Entregado" && item.schedule === schedule && item.coords);
+  const orders = adminOrders.filter((item) => item.status === "Confirmado" && item.schedule === schedule && item.coords);
   if (!orders.length) {
     showToast("No hay pedidos con ubicación exacta en este horario.");
     return;
   }
   const order = orders[0];
   const routeStops = adminOrders
-    .filter((item) => item.status !== "Entregado" && item.schedule === schedule && item.coords)
+    .filter((item) => item.status === "Confirmado" && item.schedule === schedule && item.coords)
     .map((item) => ({
       id: item.id,
       customer: item.customer,
@@ -1595,6 +1616,61 @@ function cancelOrder(id) {
   showToast("Pedido cancelado.");
 }
 
+function openOrderConfirmModal(id) {
+  const order = adminOrders.find((item) => String(item.id) === String(id));
+  if (!order || !orderConfirmModal || !orderConfirmDetails) return;
+
+  modalOrderId = order.id;
+  orderConfirmDetails.innerHTML = `
+    <div class="confirm-detail-grid">
+      <div><span>Nombre</span><strong>${order.customer || "Sin nombre"}</strong></div>
+      <div><span>Teléfono</span><strong>${order.phone || "Sin teléfono"}</strong></div>
+      <div><span>Recibe</span><strong>${order.recipient || order.customer || "Sin dato"}</strong></div>
+      <div><span>Horario</span><strong>${order.schedule || "Sin horario"}</strong></div>
+      <div><span>Pago</span><strong>${order.payment || "Sin pago"}</strong></div>
+      <div><span>Total</span><strong>${money(order.total || 0)}</strong></div>
+    </div>
+    <div class="confirm-block">
+      <span>Dirección exacta</span>
+      <p>${order.address || "Sin dirección"}</p>
+      <small>${order.coords ? `Coordenadas: ${formatCoord(order.coords.lat)}, ${formatCoord(order.coords.lng)}` : "Sin coordenadas exactas"}</small>
+    </div>
+    <div class="confirm-block">
+      <span>Productos</span>
+      <ul>${order.items.map((item) => `<li>${item.quantity} x ${item.name} - ${money(item.subtotal || 0)}</li>`).join("")}</ul>
+    </div>
+    <div class="confirm-block">
+      <span>Detalles de entrega</span>
+      <p>${order.buildingType || "Sin tipo"} | ${order.addressDetails || "Sin especificaciones"}</p>
+    </div>
+  `;
+  orderConfirmModal.hidden = false;
+}
+
+function closeOrderConfirmModal() {
+  modalOrderId = null;
+  if (orderConfirmModal) orderConfirmModal.hidden = true;
+}
+
+function approveOrder(id) {
+  adminOrders = adminOrders.map((order) => {
+    if (String(order.id) !== String(id)) return order;
+    updateOrderInFirebase(order.id, {
+      status: "Confirmado",
+      confirmedAt: window.firebase?.firestore?.FieldValue?.serverTimestamp?.() || new Date().toISOString()
+    });
+    return { ...order, status: "Confirmado" };
+  });
+  writeStored(ORDERS_KEY, adminOrders);
+  closeOrderConfirmModal();
+  activeOrderStatusFilter = "delivering";
+  document.querySelectorAll("[data-order-status-filter]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.orderStatusFilter === "delivering");
+  });
+  renderAdminDashboard();
+  showToast("Pedido confirmado y enviado a Entregando.");
+}
+
 function markScheduleDelivered(schedule, detected = false) {
   const deliveredAt = new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
   adminOrders = adminOrders.map((order) => {
@@ -1624,13 +1700,22 @@ function markScheduleDelivered(schedule, detected = false) {
 function renderFinance() {
   if (!financeTable) return;
 
-  const delivered = adminOrders.filter((order) => order.status === "Entregado");
-  const canceled = adminOrders.filter((order) => order.status === "Cancelado");
+  const period = financePeriod?.value || "day";
+  const label = period === "month" ? "mes" : period === "week" ? "semana" : "día";
+  const delivered = adminOrders.filter((order) => order.status === "Entregado" && isOrderInPeriod(order, period));
+  const canceled = adminOrders.filter((order) => order.status === "Cancelado" && isOrderInPeriod(order, period));
   const gross = delivered.reduce((sum, order) => sum + order.total, 0);
   const estimatedProfit = gross * 0.7;
   const loss = canceled.reduce((sum, order) => sum + (order.total || 0), 0);
 
   financeTable.innerHTML = `
+    <div class="finance-ticket">
+      <div>
+        <span>Resumen del ${label}</span>
+        <strong>NaturFreeze Cancún</strong>
+      </div>
+      <p>${new Date().toLocaleString("es-MX", { dateStyle: "full", timeStyle: "short" })}</p>
+    </div>
     <div class="finance-summary-grid">
       <div><span>Ganancias totales</span><strong>${money(gross)}</strong></div>
       <div><span>Ganancia estimada</span><strong>${money(estimatedProfit)}</strong></div>
@@ -1648,22 +1733,97 @@ function renderFinance() {
       </thead>
       <tbody>
         <tr>
-          <td>Hoy</td>
+          <td>${label.charAt(0).toUpperCase() + label.slice(1)} actual</td>
           <td>${money(gross)}</td>
           <td>${canceled.length}</td>
           <td>${money(gross)}</td>
           <td><span class="finance-ok">Ganancias registradas</span></td>
         </tr>
-        <tr>
-          <td>Historial local</td>
-          <td>${money(gross)}</td>
-          <td>${canceled.length}</td>
-          <td>${money(Math.max(0, gross - loss))}</td>
-          <td><span class="finance-ok">Listo</span></td>
-        </tr>
+        ${delivered.map((order) => `
+          <tr>
+            <td>Ticket #${order.id}</td>
+            <td>${money(order.total || 0)}</td>
+            <td>0</td>
+            <td>${money(order.total || 0)}</td>
+            <td><span class="finance-ok">Entregado</span></td>
+          </tr>
+        `).join("")}
       </tbody>
     </table>
   `;
+}
+
+function parseOrderDate(order) {
+  const rawDate = order.deliveredAt || order.date || order.createdAt;
+  if (rawDate?.toDate) return rawDate.toDate();
+  if (typeof rawDate === "string") {
+    const parsed = new Date(rawDate);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date();
+}
+
+function isOrderInPeriod(order, period) {
+  const date = parseOrderDate(order);
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (period === "week") {
+    const day = start.getDay() || 7;
+    start.setDate(start.getDate() - day + 1);
+  }
+  if (period === "month") {
+    start.setDate(1);
+  }
+  return date >= start;
+}
+
+function printHtml(title, html) {
+  const printWindow = window.open("", "_blank", "width=420,height=700");
+  if (!printWindow) {
+    showToast("El navegador bloqueó la ventana de impresión.");
+    return;
+  }
+  printWindow.document.write(`
+    <!doctype html>
+    <html lang="es">
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+          h1, h2, h3 { margin: 0 0 12px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+          ul { padding-left: 18px; }
+          .total { margin-top: 18px; font-size: 22px; font-weight: 800; }
+        </style>
+      </head>
+      <body>${html}</body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+}
+
+function printTicket(id) {
+  const order = adminOrders.find((item) => String(item.id) === String(id));
+  if (!order) return;
+  printHtml(`Ticket ${order.id}`, `
+    <h2>NaturFreeze Cancún</h2>
+    <p>Ticket #${order.id}</p>
+    <p>${order.deliveredAt || order.date || ""}</p>
+    <p><strong>Cliente:</strong> ${order.customer || ""}</p>
+    <p><strong>Teléfono:</strong> ${order.phone || ""}</p>
+    <p><strong>Pago:</strong> ${order.payment || ""}</p>
+    <ul>${order.items.map((item) => `<li>${item.quantity} x ${item.name} - ${money(item.subtotal || 0)}</li>`).join("")}</ul>
+    <div class="total">Total: ${money(order.total || 0)}</div>
+  `);
+}
+
+function printFinanceSummary() {
+  if (!financeTable) return;
+  printHtml("Resumen financiero NaturFreeze", `<h2>Resumen financiero</h2>${financeTable.innerHTML}`);
 }
 
 function renderNotes() {
@@ -1727,7 +1887,7 @@ function checkDeliveryArrival(id) {
 }
 
 function checkScheduleArrival(schedule) {
-  const orders = adminOrders.filter((order) => order.status !== "Entregado" && order.schedule === schedule && order.coords);
+  const orders = adminOrders.filter((order) => order.status === "Confirmado" && order.schedule === schedule && order.coords);
   if (!orders.length || !navigator.geolocation) {
     showToast("No hay GPS suficiente para revisar este horario.");
     return;
@@ -1762,6 +1922,7 @@ function loadProductEditor(id) {
   editProductStock.value = Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999;
   editProductPresentation.value = product.presentation;
   editProductImage.value = product.image;
+  if (editProductPreview) editProductPreview.src = product.image;
   editProductDetail.value = product.detail;
 }
 
@@ -1770,9 +1931,10 @@ function startNewProduct() {
   editProductCategory.value = "";
   editProductName.value = "";
   editProductPrice.value = "";
-  editProductStock.value = "";
+  editProductStock.value = "999";
   editProductPresentation.value = "";
-  editProductImage.value = "";
+  editProductImage.value = "assets/logo-naturfreeze-mark.jpg";
+  if (editProductPreview) editProductPreview.src = "assets/logo-naturfreeze-mark.jpg";
   editProductDetail.value = "";
   editProduct.dataset.mode = "new";
   showToast("Listo para crear producto nuevo.");
@@ -1794,7 +1956,8 @@ function saveProductEdit() {
     stock: Math.max(0, Number(editProductStock.value) || 0),
     presentation: editProductPresentation.value.trim() || existingProduct.presentation || "1 pieza",
     image: editProductImage.value.trim() || existingProduct.image || "assets/logo-naturfreeze-mark.jpg",
-    detail: editProductDetail.value.trim() || existingProduct.detail || "Producto NaturFreeze."
+    detail: editProductDetail.value.trim() || existingProduct.detail || "Producto NaturFreeze.",
+    hidden: false
   };
 
   if (editProduct.dataset.mode === "new") {
@@ -1844,6 +2007,7 @@ function previewUploadedProductImage(file) {
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     editProductImage.value = reader.result;
+    if (editProductPreview) editProductPreview.src = reader.result;
     showToast("Imagen cargada para probar.");
   });
   reader.readAsDataURL(file);
@@ -1852,7 +2016,7 @@ function previewUploadedProductImage(file) {
 function renderAdminProductCards() {
   if (!adminProductCards) return;
 
-  adminProductCards.innerHTML = products.map((product) => `
+  adminProductCards.innerHTML = products.filter((product) => !product.hidden).map((product) => `
     <article class="admin-product-card ${Number(product.stock) <= 0 ? "sold-out" : ""}">
       <img src="${product.image}" alt="${product.name}">
       <div>
@@ -1861,15 +2025,62 @@ function renderAdminProductCards() {
         <p>${product.detail}</p>
       </div>
       <div class="admin-product-actions">
+        <span class="product-price-label">Tarifa de precio</span>
         <strong>${money(product.price)}</strong>
-        <button class="copy-button" type="button" data-edit-product="${product.id}">Editar</button>
+        <button class="product-state ${Number(product.stock) <= 0 ? "off" : ""}" type="button" data-toggle-product="${product.id}">
+          <span></span>${Number(product.stock) <= 0 ? "No disponible" : "Disponible"}
+        </button>
+        <button class="kebab-button" type="button" data-product-menu="${product.id}" aria-label="Opciones de producto">...</button>
+        <div class="product-row-menu" id="productMenu-${product.id}" hidden>
+          <button type="button" data-edit-product="${product.id}">Editar</button>
+          <button type="button" data-delete-product="${product.id}">Eliminar</button>
+        </div>
       </div>
     </article>
   `).join("");
 }
+
+function openProductEditor(id) {
+  editProduct.dataset.mode = "";
+  loadProductEditor(id);
+  productEditor?.classList.add("open");
+  productEditor?.scrollIntoView({ behavior: "smooth", block: "start" });
+  showToast("Producto listo para editar.");
+}
+
+function closeProductEditorPanel() {
+  productEditor?.classList.remove("open");
+}
+
+function deleteProduct(id) {
+  const product = products.find((item) => item.id === id);
+  if (!product) return;
+  product.stock = 0;
+  product.hidden = true;
+  productEdits[product.id] = { ...(productEdits[product.id] || {}), stock: 0, hidden: true };
+  writeStored(PRODUCT_EDITS_KEY, productEdits);
+  saveProductToFirebase(product);
+  renderProducts();
+  renderAdminDashboard();
+  showToast("Producto eliminado del menú.");
+}
+
+function toggleProductAvailability(id) {
+  const product = products.find((item) => item.id === id);
+  if (!product) return;
+  const isOff = Number(product.stock) <= 0;
+  product.stock = isOff ? 999 : 0;
+  product.hidden = false;
+  productEdits[product.id] = { ...(productEdits[product.id] || {}), stock: product.stock, hidden: false };
+  writeStored(PRODUCT_EDITS_KEY, productEdits);
+  saveProductToFirebase(product);
+  renderProducts();
+  renderAdminDashboard();
+  showToast(isOff ? "Producto disponible." : "Producto no disponible.");
+}
 function getFilteredProducts() {
   const query = normalizeText(activeSearch.trim());
-  return products.filter((product) => {
+  return products.filter((product) => !product.hidden).filter((product) => {
     const matchesCategory = activeFilter === "todos" || product.category === activeFilter;
     const searchText = normalizeText(`${product.name} ${product.category} ${product.presentation} ${product.detail}`);
     const matchesSearch = !query || searchText.includes(query);
@@ -2289,14 +2500,53 @@ document.querySelector("#clearOrders").addEventListener("click", clearWebOrders)
 document.querySelector("#saveProductEdit").addEventListener("click", saveProductEdit);
 document.querySelector("#resetProductEdits").addEventListener("click", resetProductEdits);
 document.querySelector("#newProductButton").addEventListener("click", startNewProduct);
+const newProductHeaderButton = document.querySelector("#newProductHeaderButton");
+if (newProductHeaderButton) newProductHeaderButton.addEventListener("click", () => {
+  startNewProduct();
+  productEditor?.classList.add("open");
+  productEditor?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 editProduct.addEventListener("change", () => loadProductEditor(editProduct.value));
 editProductUpload.addEventListener("change", () => previewUploadedProductImage(editProductUpload.files[0]));
+if (closeProductEditor) closeProductEditor.addEventListener("click", closeProductEditorPanel);
+if (closeOrderModal) closeOrderModal.addEventListener("click", closeOrderConfirmModal);
+if (approveOrderFromModal) {
+  approveOrderFromModal.addEventListener("click", () => {
+    if (modalOrderId) approveOrder(modalOrderId);
+  });
+}
+if (cancelOrderFromModal) {
+  cancelOrderFromModal.addEventListener("click", () => {
+    if (modalOrderId) {
+      cancelOrder(modalOrderId);
+      closeOrderConfirmModal();
+    }
+  });
+}
+if (financePeriod) financePeriod.addEventListener("change", renderFinance);
+if (printFinance) printFinance.addEventListener("click", printFinanceSummary);
+if (posLines) {
+  posLines.addEventListener("click", (event) => {
+    const printButton = event.target.closest("[data-print-ticket]");
+    if (printButton) printTicket(printButton.dataset.printTicket);
+  });
+}
 adminProductCards.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-edit-product]");
-  if (!button) return;
-  editProduct.dataset.mode = "";
-  loadProductEditor(button.dataset.editProduct);
-  showToast("Producto listo para editar.");
+  const menuButton = event.target.closest("[data-product-menu]");
+  const editButton = event.target.closest("[data-edit-product]");
+  const deleteButton = event.target.closest("[data-delete-product]");
+  const toggleButton = event.target.closest("[data-toggle-product]");
+
+  if (menuButton) {
+    const menu = document.querySelector(`#productMenu-${CSS.escape(menuButton.dataset.productMenu)}`);
+    document.querySelectorAll(".product-row-menu").forEach((item) => {
+      if (item !== menu) item.hidden = true;
+    });
+    if (menu) menu.hidden = !menu.hidden;
+  }
+  if (editButton) openProductEditor(editButton.dataset.editProduct);
+  if (deleteButton) deleteProduct(deleteButton.dataset.deleteProduct);
+  if (toggleButton) toggleProductAvailability(toggleButton.dataset.toggleProduct);
 });
 document.querySelector("#adminTabs").addEventListener("click", (event) => {
   const button = event.target.closest("[data-admin-view]");
@@ -2326,6 +2576,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   const confirmScheduleButton = event.target.closest("[data-confirm-schedule]");
   const arrivedScheduleButton = event.target.closest("[data-arrived-schedule]");
   const deliverScheduleButton = event.target.closest("[data-deliver-schedule]");
+  const confirmOrderButton = event.target.closest("[data-confirm-order]");
   const routeButton = event.target.closest("[data-route-order]");
   const arrivedButton = event.target.closest("[data-arrived-order]");
   const deliverButton = event.target.closest("[data-deliver-order]");
@@ -2348,6 +2599,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   if (confirmScheduleButton) openDeliveryRouteForSchedule(confirmScheduleButton.dataset.confirmSchedule);
   if (arrivedScheduleButton) checkScheduleArrival(arrivedScheduleButton.dataset.arrivedSchedule);
   if (deliverScheduleButton) markScheduleDelivered(deliverScheduleButton.dataset.deliverSchedule);
+  if (confirmOrderButton) openOrderConfirmModal(confirmOrderButton.dataset.confirmOrder);
   if (routeButton) openDeliveryRoute(routeButton.dataset.routeOrder);
   if (arrivedButton) checkDeliveryArrival(arrivedButton.dataset.arrivedOrder);
   if (deliverButton) markOrderDelivered(deliverButton.dataset.deliverOrder);

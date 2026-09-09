@@ -388,8 +388,8 @@
 
                 <div class="pos-summary">
                   <div class="pos-summary-head">
-                    <h3>Ventas confirmadas</h3>
-                    <small>Se agregan al entregar pedidos</small>
+                    <h3>Tickets de ventas</h3>
+                    <small>Cada pedido entregado aparece como ticket</small>
                   </div>
                   <div class="pos-lines" id="posLines"></div>
                 </div>
@@ -418,7 +418,10 @@
                     <span class="eyebrow">Control de pagina</span>
                     <h3>Menú de la tienda</h3>
                   </div>
-                  <button class="copy-button" id="resetProductEdits" type="button">Restaurar</button>
+                  <div class="admin-actions">
+                    <button class="secondary-action" id="newProductHeaderButton" type="button">Nuevo producto</button>
+                    <button class="copy-button" id="resetProductEdits" type="button">Restaurar</button>
+                  </div>
                 </div>
                 <div class="menu-help-banner">
                   <strong>Aquí puedes marcar productos como disponibles o agotados y actualizar precios.</strong>
@@ -426,7 +429,28 @@
                 </div>
 
                 <div class="product-admin-grid">
-                  <div class="product-editor">
+                  <div class="product-editor" id="productEditor">
+                    <div class="product-editor-top">
+                      <button class="plain-back" id="closeProductEditor" type="button">← Atrás</button>
+                      <strong>Editar producto</strong>
+                    </div>
+                    <div class="product-editor-tabs">
+                      <span class="active">Información básica</span>
+                      <span>Grupo modificador</span>
+                      <span>Reglas de precios y ventas</span>
+                    </div>
+                    <div class="product-type-grid">
+                      <label class="product-type-option active">
+                        <input type="radio" checked>
+                        <strong>Producto individual</strong>
+                        <span>Productos vendidos individualmente en tu tienda.</span>
+                      </label>
+                      <label class="product-type-option">
+                        <input type="radio">
+                        <strong>Combo</strong>
+                        <span>Productos vendidos juntos como paquete o promoción.</span>
+                      </label>
+                    </div>
                     <label for="editProduct">Producto</label>
                     <select id="editProduct"></select>
                     <button class="secondary-action" id="newProductButton" type="button">Nuevo producto</button>
@@ -444,6 +468,13 @@
                     <input id="editProductImage" type="text" placeholder="assets/imagen.jpg">
                     <label for="editProductUpload">Cargar imagen para probar</label>
                     <input id="editProductUpload" type="file" accept="image/*">
+                    <div class="product-photo-preview">
+                      <img id="editProductPreview" src="assets/logo-naturfreeze-mark.jpg" alt="Vista previa del producto">
+                      <div>
+                        <span>Aprobado</span>
+                        <p>Las fotos ayudan a que los clientes entiendan mejor tus productos.</p>
+                      </div>
+                    </div>
                     <label for="editProductDetail">Descripcion</label>
                     <textarea id="editProductDetail" rows="4"></textarea>
                     <button class="add-button" id="saveProductEdit" type="button">Guardar cambio</button>
@@ -456,7 +487,14 @@
               <section class="admin-view" id="adminViewFinance" data-admin-panel="finance">
                 <div class="admin-page-head">
                   <h3>Finanzas</h3>
-                  <span>Recibos y cortes internos</span>
+                  <div class="finance-tools">
+                    <select id="financePeriod">
+                      <option value="day">Día</option>
+                      <option value="week">Semana</option>
+                      <option value="month">Mes</option>
+                    </select>
+                    <button class="copy-button" id="printFinance" type="button">Imprimir</button>
+                  </div>
                 </div>
                 <div class="finance-table" id="financeTable"></div>
               </section>
@@ -480,6 +518,19 @@
         </section>
       </div>
     </aside>
+
+    <div class="admin-modal" id="orderConfirmModal" hidden>
+      <div class="admin-modal-card">
+        <button class="icon-button" id="closeOrderModal" type="button" aria-label="Cerrar">x</button>
+        <span class="eyebrow">Confirmar pedido</span>
+        <h3>Revisa la información completa</h3>
+        <div id="orderConfirmDetails"></div>
+        <div class="cart-step-actions">
+          <button class="secondary-action" id="cancelOrderFromModal" type="button">Cancelar pedido</button>
+          <button class="primary-action" id="approveOrderFromModal" type="button">Confirmar y pasar a entregando</button>
+        </div>
+      </div>
+    </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

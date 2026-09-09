@@ -3151,3 +3151,403 @@ body.map-fullscreen-open {
     grid-column: 2;
   }
 }
+
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(6, 12, 20, .45);
+  backdrop-filter: blur(8px);
+}
+
+.admin-modal[hidden] {
+  display: none;
+}
+
+.admin-modal-card {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  width: min(760px, 100%);
+  max-height: min(88vh, 820px);
+  overflow: auto;
+  padding: 26px;
+  color: #080b10;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 26px 80px rgba(8, 11, 16, .28);
+}
+
+.admin-modal-card .icon-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+}
+
+.confirm-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.confirm-detail-grid div,
+.confirm-block {
+  padding: 14px;
+  background: #f7f8fa;
+  border: 1px solid #eceff3;
+  border-radius: 12px;
+}
+
+.confirm-detail-grid span,
+.confirm-block span {
+  display: block;
+  margin-bottom: 6px;
+  color: #7b8088;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.confirm-detail-grid strong,
+.confirm-block p {
+  margin: 0;
+  color: #080b10;
+  font-weight: 900;
+}
+
+.confirm-block ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.sale-ticket {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(10, 24, 40, .08);
+}
+
+.ticket-head,
+.ticket-customer,
+.ticket-total,
+.finance-ticket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ticket-head strong,
+.ticket-total strong,
+.finance-ticket strong {
+  color: #080b10;
+  font-size: 20px;
+}
+
+.sale-ticket ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sale-ticket li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #d8dde5;
+}
+
+.product-editor {
+  display: none;
+  grid-column: 1 / -1;
+  padding: 26px;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 0;
+  box-shadow: 0 18px 45px rgba(10, 24, 40, .08);
+}
+
+.product-editor.open {
+  display: grid;
+}
+
+.product-editor-top,
+.product-editor-tabs,
+.product-type-grid,
+.product-photo-preview,
+.finance-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.product-editor-top {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.plain-back {
+  min-height: 38px;
+  padding: 0 12px;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.product-editor-tabs {
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.product-editor-tabs span {
+  padding: 10px 0;
+  color: #7b8088;
+  font-weight: 900;
+  border-bottom: 3px solid transparent;
+}
+
+.product-editor-tabs .active {
+  color: #080b10;
+  border-color: #080b10;
+}
+
+.product-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.product-type-option {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  min-height: 112px;
+  padding: 18px;
+  background: #f7f8fa;
+  border: 1px solid #edf0f3;
+  border-radius: 16px;
+}
+
+.product-type-option.active {
+  border-color: #080b10;
+}
+
+.product-type-option span {
+  grid-column: 1 / -1;
+  color: #7b8088;
+  font-weight: 700;
+}
+
+.product-photo-preview {
+  align-items: flex-start;
+  padding: 14px;
+  background: #f7f8fa;
+  border-radius: 14px;
+}
+
+.product-photo-preview img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  background: white;
+  border-radius: 10px;
+}
+
+.product-photo-preview span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 12px;
+  color: white;
+  font-weight: 900;
+  background: #22c55e;
+  border-radius: 999px;
+}
+
+.admin-product-card {
+  position: relative;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  align-items: center;
+  background: white;
+  border-color: #edf0f3;
+  border-radius: 0;
+}
+
+.admin-product-card img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.admin-product-actions {
+  position: relative;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.product-price-label {
+  color: #7b8088;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.product-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  color: #080b10;
+  font-weight: 900;
+  background: #e0f8e9;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.product-state span {
+  width: 9px;
+  height: 9px;
+  background: #22c55e;
+  border-radius: 50%;
+}
+
+.product-state.off {
+  background: #ffe8ee;
+}
+
+.product-state.off span {
+  background: #ef4444;
+}
+
+.kebab-button {
+  width: 38px;
+  height: 38px;
+  color: #080b10;
+  font-size: 22px;
+  font-weight: 900;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.product-row-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 20;
+  display: grid;
+  min-width: 170px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(10, 24, 40, .16);
+}
+
+.product-row-menu[hidden] {
+  display: none;
+}
+
+.product-row-menu button {
+  padding: 12px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.product-row-menu button:hover {
+  background: #f7f8fa;
+}
+
+.product-row-menu button:last-child {
+  color: #f43f5e;
+}
+
+.finance-ticket {
+  padding: 18px;
+  background: #f0fdf8;
+  border: 1px solid #d8f8e8;
+  border-radius: 16px;
+}
+
+.finance-ticket span,
+.finance-ticket p {
+  margin: 0;
+  color: #667085;
+  font-weight: 800;
+}
+
+.route-steps-card {
+  width: min(540px, 48%);
+  min-height: 128px;
+  padding: 20px 22px;
+}
+
+.route-steps-card > strong {
+  font-size: clamp(30px, 4.2vw, 54px);
+}
+
+@media (max-width: 760px) {
+  .confirm-detail-grid,
+  .product-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-modal-card {
+    padding: 20px 16px;
+  }
+
+  .admin-product-card {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .admin-product-actions {
+    grid-column: 1 / -1;
+    justify-items: stretch;
+  }
+
+  .product-state,
+  .kebab-button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .product-row-menu {
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+
+  .ticket-head,
+  .ticket-customer,
+  .ticket-total,
+  .finance-ticket,
+  .finance-tools {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .route-steps-card {
+    width: min(86%, 360px);
+    min-height: 92px;
+  }
+}
