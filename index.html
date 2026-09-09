@@ -99,10 +99,13 @@
         </label>
         <div class="filters">
           <button class="filter active" type="button" data-filter="todos">Todos</button>
-          <button class="filter" type="button" data-filter="pescado">Pescado</button>
-          <button class="filter" type="button" data-filter="pollo">Pollo</button>
-          <button class="filter" type="button" data-filter="fruta">Fruta</button>
-          <button class="filter" type="button" data-filter="botana">Botanas</button>
+          <button class="filter" type="button" data-filter="frutas congeladas">Frutas</button>
+          <button class="filter" type="button" data-filter="papas y verduras">Papas</button>
+          <button class="filter" type="button" data-filter="empanizados">Empanizados</button>
+          <button class="filter" type="button" data-filter="mariscos">Mariscos</button>
+          <button class="filter" type="button" data-filter="pescados">Pescados</button>
+          <button class="filter" type="button" data-filter="aves">Aves</button>
+          <button class="filter" type="button" data-filter="carnes">Carnes</button>
         </div>
       </section>
 
@@ -300,10 +303,11 @@
             <div class="admin-operator">
               <img src="assets/logo-naturfreeze-mark.jpg" alt="NaturFreeze">
               <div>
-                <span>Admin conectado</span>
-                <strong>NaturFreeze POS</strong>
+                <span>NaturFreeze Cancún</span>
+                <strong>Panel de tienda</strong>
               </div>
             </div>
+            <div class="store-status-pill"><span></span> Actualmente abierta</div>
             <div class="admin-top-actions">
               <button class="secondary-action" id="adminLogout" type="button">Cerrar sesion</button>
             </div>
@@ -311,41 +315,69 @@
 
           <div class="admin-layout">
             <aside class="admin-sidebar">
-              <span class="eyebrow">Control interno</span>
-              <h2>Panel de tienda</h2>
               <nav class="admin-tabs" id="adminTabs" aria-label="Panel administrador">
-                <button class="active" type="button" data-admin-view="pos">Punto de venta</button>
-                <button type="button" data-admin-view="orders">Pedidos</button>
-                <button type="button" data-admin-view="products">Productos</button>
+                <button class="active admin-tab-summary" type="button" data-admin-view="summary" aria-label="Resumen"><span></span></button>
+                <button class="admin-tab-orders" type="button" data-admin-view="orders" aria-label="Pedidos"><span></span></button>
+                <button class="admin-tab-products" type="button" data-admin-view="products" aria-label="Menú"><span></span></button>
+                <button class="admin-tab-pos" type="button" data-admin-view="pos" aria-label="Ventas"><span></span></button>
+                <button class="admin-tab-finance" type="button" data-admin-view="finance" aria-label="Finanzas"><span></span></button>
+                <button class="admin-tab-notes" type="button" data-admin-view="notes" aria-label="Notas"><span></span></button>
               </nav>
-              <div class="admin-mini-card">
-                <span>Pedido rapido</span>
-                <strong id="adminOrderCount">0</strong>
-                <small>pedidos guardados en este navegador</small>
-              </div>
             </aside>
 
             <div class="admin-main">
-              <div class="admin-stats">
-                <div>
-                  <span>Total entregado</span>
-                  <strong id="posTotal">$0</strong>
+              <section class="admin-view active" id="adminViewSummary" data-admin-panel="summary">
+                <div class="admin-page-head">
+                  <h3>Resumen</h3>
+                  <span id="adminLastUpdate">Última actualización: ahora</span>
                 </div>
-                <div>
-                  <span>Productos vendidos</span>
-                  <strong id="posCount">0</strong>
+                <div class="admin-alert-card">
+                  <strong>Control diario NaturFreeze</strong>
+                  <span>Pedidos, ventas, cancelaciones e inventario se actualizan desde Firebase cuando la página está publicada.</span>
+                  <b>Completado</b>
                 </div>
-                <div>
-                  <span>Ventas recibidas</span>
-                  <strong id="adminSalesTotal">$0</strong>
+                <div class="admin-stats">
+                  <div>
+                    <span>Pedidos en preparación</span>
+                    <strong id="adminOrderCount">0</strong>
+                    <small>Por confirmar</small>
+                  </div>
+                  <div>
+                    <span>Ventas del día</span>
+                    <strong id="adminSalesTotal">$0</strong>
+                    <small>Entregadas hoy</small>
+                  </div>
+                  <div>
+                    <span>Productos vendidos</span>
+                    <strong id="posCount">0</strong>
+                    <small>Unidades</small>
+                  </div>
+                  <div>
+                    <span>Cancelaciones</span>
+                    <strong id="adminCanceledCount">0</strong>
+                    <small>Pedidos cancelados</small>
+                  </div>
+                  <div>
+                    <span>Catálogo activo</span>
+                    <strong id="adminProductsTotal">0</strong>
+                    <small>Productos</small>
+                  </div>
                 </div>
-                <div>
-                  <span>Catalogo</span>
-                  <strong id="adminProductsTotal">0</strong>
+                <div class="sales-analysis-card">
+                  <div>
+                    <h4>Análisis de ventas</h4>
+                    <p>Vista rápida de desempeño del día.</p>
+                  </div>
+                  <div class="mini-chart" id="miniChart"></div>
+                  <div class="analysis-metrics">
+                    <div><span>Ingreso total</span><strong id="posTotal">$0</strong></div>
+                    <div><span>Ventas completadas</span><strong id="completedOrdersCount">0</strong></div>
+                    <div><span>Inventario agotado</span><strong id="soldOutCount">0</strong></div>
+                  </div>
                 </div>
-              </div>
+              </section>
 
-              <section class="admin-view active" id="adminViewPos" data-admin-panel="pos">
+              <section class="admin-view" id="adminViewPos" data-admin-panel="pos">
                 <div class="admin-section-head">
                   <div>
                     <span class="eyebrow">Ventas</span>
@@ -371,6 +403,12 @@
                   </div>
                   <button class="copy-button" id="clearOrders" type="button">Vaciar historial</button>
                 </div>
+                <div class="order-status-tabs">
+                  <button class="active" type="button" data-order-status-filter="preparing">Preparando</button>
+                  <button type="button" data-order-status-filter="delivering">Entregando</button>
+                  <button type="button" data-order-status-filter="delivered">Entregado</button>
+                  <button type="button" data-order-status-filter="canceled">Cancelaciones</button>
+                </div>
                 <div class="admin-orders" id="adminOrders"></div>
               </section>
 
@@ -378,9 +416,13 @@
                 <div class="admin-section-head">
                   <div>
                     <span class="eyebrow">Control de pagina</span>
-                    <h3>Productos</h3>
+                    <h3>Menú de la tienda</h3>
                   </div>
                   <button class="copy-button" id="resetProductEdits" type="button">Restaurar</button>
+                </div>
+                <div class="menu-help-banner">
+                  <strong>Aquí puedes marcar productos como disponibles o agotados y actualizar precios.</strong>
+                  <span>Para productos nuevos usa el formulario; si no tienes imagen, NaturFreeze pondrá el logo por ahora.</span>
                 </div>
 
                 <div class="product-admin-grid">
@@ -408,6 +450,29 @@
                     <small>Los cambios se guardan en este navegador para probarlos antes de subirlos definitivo.</small>
                   </div>
                   <div class="admin-product-list" id="adminProductCards"></div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="adminViewFinance" data-admin-panel="finance">
+                <div class="admin-page-head">
+                  <h3>Finanzas</h3>
+                  <span>Recibos y cortes internos</span>
+                </div>
+                <div class="finance-table" id="financeTable"></div>
+              </section>
+
+              <section class="admin-view" id="adminViewNotes" data-admin-panel="notes">
+                <div class="admin-page-head">
+                  <h3>Notas</h3>
+                  <span>Recordatorios bonitos para operación diaria</span>
+                </div>
+                <div class="notes-board">
+                  <form class="note-form" id="noteForm">
+                    <input id="noteTitle" type="text" placeholder="Título de la nota">
+                    <textarea id="noteText" rows="4" placeholder="Ej. Revisar inventario de camarón antes de las 2 pm"></textarea>
+                    <button class="add-button" type="submit">Guardar nota</button>
+                  </form>
+                  <div class="notes-list" id="notesList"></div>
                 </div>
               </section>
             </div>

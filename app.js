@@ -15,112 +15,299 @@ const FIREBASE_CONFIG = {
 
 const products = [
   {
-    id: "tilapia",
-    name: "Filete de tilapia",
-    category: "pescado",
-    presentation: "1 kilo",
-    price: 110,
-    image: "assets/tilapia.jpg",
-    detail: "Calidad premium, ideal para plancha, horno, frito o ceviche."
+    "id": "mix-berries",
+    "name": "Mix de berries",
+    "category": "frutas congeladas",
+    "presentation": "2 kg",
+    "price": 180,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "pollo-picoso",
-    name: "Tiras de pechuga picosas",
-    category: "pollo",
-    presentation: "1 kilo",
-    price: 170,
-    image: "assets/pollo-picoso.jpg",
-    detail: "100% pechuga de pollo, congelado IQF y alto en proteína."
+    "id": "fresas",
+    "name": "Fresas congeladas",
+    "category": "frutas congeladas",
+    "presentation": "2 kg",
+    "price": 170,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "berries",
-    name: "Mix de berries",
-    category: "fruta",
-    presentation: "2 kilos",
-    price: 180,
-    image: "assets/mix-berries.jpg",
-    detail: "Fresas, moras, arandanos y frambuesas para smoothies y postres."
+    "id": "mango",
+    "name": "Mango congelado",
+    "category": "frutas congeladas",
+    "presentation": "2 kg",
+    "price": 170,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "mango",
-    name: "Dados de mango",
-    category: "fruta",
-    presentation: "2 kilos",
-    price: 170,
-    image: "assets/mango.jpg",
-    detail: "Mango congelado en cubos, practico para bebidas, postres y cocina."
+    "id": "papas-francesa",
+    "name": "Papas a la francesa",
+    "category": "papas y verduras",
+    "presentation": "2.5 kg",
+    "price": 120,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "fresas",
-    name: "Fresas congeladas",
-    category: "fruta",
-    presentation: "2 kilos",
-    price: 170,
-    image: "assets/fresas.jpg",
-    detail: "Fruta congelada lista para licuados, reposteria y salsas."
+    "id": "papas-gajo-1kg",
+    "name": "Papas gajo",
+    "category": "papas y verduras",
+    "presentation": "1 kg",
+    "price": 80,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "papas",
-    name: "Papas a la francesa corte 3/8",
-    category: "botana",
-    presentation: "2.5 kilos",
-    price: 120,
-    image: "assets/papas.jpg",
-    detail: "Papa congelada para restaurantes, negocios de comida y hogar."
+    "id": "papas-gajo-25kg",
+    "name": "Papas gajo",
+    "category": "papas y verduras",
+    "presentation": "2.5 kg",
+    "price": 180,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "nuggets",
-    name: "Nugget de pollo con forma de dinosaurio",
-    category: "pollo",
-    presentation: "1 kilo",
-    price: 126,
-    image: "assets/nuggets.jpg",
-    detail: "Prácticos, rendidores y listos para freír u hornear."
+    "id": "aros-cebolla",
+    "name": "Aros de cebolla",
+    "category": "papas y verduras",
+    "presentation": "1 kg",
+    "price": 120,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "filete-pechuga",
-    name: "Filete de pechuga natural",
-    category: "pollo",
-    presentation: "1 kilo",
-    price: 170,
-    image: "assets/filete-pechuga.jpg",
-    detail: "Filetes de pechuga limpios y congelados, listos para cocinar."
+    "id": "nuggets-dinosaurio",
+    "name": "Nuggets dinosaurio",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 130,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "boneless-natural",
-    name: "Boneless de pechuga natural",
-    category: "pollo",
-    presentation: "1 kilo",
-    price: 170,
-    image: "assets/boneless.jpg",
-    detail: "Carne blanca seleccionada, alta en proteína y congelada IQF."
+    "id": "nuggets-tradicional",
+    "name": "Nuggets tradicional",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 110,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "filete-empanizado",
-    name: "Filete de pechuga empanizado",
-    category: "pollo",
-    presentation: "1 kilo",
-    price: 184,
-    image: "assets/filete-empanizado.jpg",
-    detail: "Fácil de preparar, ideal para freír, hornear o acompañar comidas."
+    "id": "boneless-pechuga",
+    "name": "Boneless de pechuga",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 170,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
   },
   {
-    id: "aros-cebolla",
-    name: "Aros de cebolla rebozado",
-    category: "botana",
-    presentation: "1 kilo",
-    price: 100,
-    image: "assets/aros-cebolla.jpg",
-    detail: "Crujientes y rápidos de preparar como entrada o snack."
+    "id": "dedos-queso",
+    "name": "Dedos de queso",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 280,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "tiras-pechuga-picosas",
+    "name": "Tiras de pechuga picosas",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 175,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "palomitas-pechuga",
+    "name": "Palomitas de pechuga",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 125,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "jalapenos-poppers",
+    "name": "Jalapeños poppers",
+    "category": "empanizados",
+    "presentation": "1 kg",
+    "price": 270,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "mix-mariscos",
+    "name": "Mix de mariscos",
+    "category": "mariscos",
+    "presentation": "500 g",
+    "price": 70,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "camaron-jumbo",
+    "name": "Camarón Jumbo 16/20",
+    "category": "mariscos",
+    "presentation": "1 kg",
+    "price": 280,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "camaron-grande",
+    "name": "Camarón grande 21/25",
+    "category": "mariscos",
+    "presentation": "1 kg",
+    "price": 240,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "camaron-mediano",
+    "name": "Camarón mediano 41/50",
+    "category": "mariscos",
+    "presentation": "1 kg",
+    "price": 200,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "camaron-chico",
+    "name": "Camarón chico 61/70",
+    "category": "mariscos",
+    "presentation": "1 kg",
+    "price": 180,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "filete-tilapia-premium",
+    "name": "Filete de tilapia Premium",
+    "category": "pescados",
+    "presentation": "1 kg",
+    "price": 115,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "filete-basa-premium",
+    "name": "Filete Basa premium",
+    "category": "pescados",
+    "presentation": "1 kg",
+    "price": 110,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "pechuga-importada-iqf",
+    "name": "Pechuga de pollo importada IQF",
+    "category": "aves",
+    "presentation": "1 kg",
+    "price": 120,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "pechuga-brasilena-iqf",
+    "name": "Pechuga brasileña sin hueso IQF",
+    "category": "aves",
+    "presentation": "1 kg",
+    "price": 120,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "carne-pollo-hamburguesa",
+    "name": "Carne de pollo para hamburguesas",
+    "category": "aves",
+    "presentation": "1 kg",
+    "price": 136,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "arrachera-nortenita",
+    "name": "Arrachera norteñita",
+    "category": "carnes",
+    "presentation": "1 kg",
+    "price": 170,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "chuleta-ahumada-8pz",
+    "name": "Chuleta ahumada paquete de 8 pz",
+    "category": "carnes",
+    "presentation": "1.1 kg a 1.4 kg aprox.",
+    "price": 140,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "rib-eye",
+    "name": "Rib Eye",
+    "category": "carnes",
+    "presentation": "Porción según peso",
+    "price": 400,
+    "stock": 999,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Producto congelado NaturFreeze Cancún. Excelente calidad y precio sujeto a cambio sin previo aviso."
+  },
+  {
+    "id": "carne-res-hamburguesa",
+    "name": "Carne de res para hamburguesa",
+    "category": "carnes",
+    "presentation": "1 kg",
+    "price": 0,
+    "stock": 0,
+    "image": "assets/logo-naturfreeze-mark.jpg",
+    "detail": "Agotado por el momento."
   }
 ];
 
 const PRODUCT_EDITS_KEY = "naturfreezeProductEdits";
 const CUSTOM_PRODUCTS_KEY = "naturfreezeCustomProducts";
 const ORDERS_KEY = "naturfreezeAdminOrders";
+const NOTES_KEY = "naturfreezeAdminNotes";
 let productEdits = readStored(PRODUCT_EDITS_KEY, {});
 let customProducts = readStored(CUSTOM_PRODUCTS_KEY, []);
 let adminOrders = readStored(ORDERS_KEY, []);
+let adminNotes = readStored(NOTES_KEY, [
+  { id: 1, title: "Inventario frío", text: "Revisar productos agotados antes de abrir pedidos.", color: "green" },
+  { id: 2, title: "Rutas 2:00 pm", text: "Confirmar pedidos con ubicación exacta antes de salir.", color: "blue" },
+  { id: 3, title: "Pagos", text: "Pedir comprobante cuando el cliente elija transferencia.", color: "pink" }
+]);
 const defaultProducts = products.map((product) => ({ ...product }));
 let firestoreDb = null;
 let firebaseReady = false;
@@ -169,6 +356,16 @@ const posCount = document.querySelector("#posCount");
 const adminOrderCount = document.querySelector("#adminOrderCount");
 const adminSalesTotal = document.querySelector("#adminSalesTotal");
 const adminProductsTotal = document.querySelector("#adminProductsTotal");
+const adminCanceledCount = document.querySelector("#adminCanceledCount");
+const completedOrdersCount = document.querySelector("#completedOrdersCount");
+const soldOutCount = document.querySelector("#soldOutCount");
+const adminLastUpdate = document.querySelector("#adminLastUpdate");
+const miniChart = document.querySelector("#miniChart");
+const financeTable = document.querySelector("#financeTable");
+const noteForm = document.querySelector("#noteForm");
+const noteTitle = document.querySelector("#noteTitle");
+const noteText = document.querySelector("#noteText");
+const notesList = document.querySelector("#notesList");
 const adminOrdersElement = document.querySelector("#adminOrders");
 const adminProductCards = document.querySelector("#adminProductCards");
 const editProduct = document.querySelector("#editProduct");
@@ -204,6 +401,7 @@ let adminRouteLastRecalcAt = 0;
 let activeRouteStepIndex = 0;
 let adminRouteViewMode = "overview";
 let cartStep = 1;
+let activeOrderStatusFilter = "preparing";
 let soundContext = null;
 let soundUnlocked = false;
 let welcomeSoundPlayed = false;
@@ -653,7 +851,7 @@ function loginAdmin() {
 
   adminLogin.hidden = true;
   adminPos.hidden = false;
-  switchAdminView("pos");
+  switchAdminView("summary");
   renderAdminDashboard();
   playSound("success");
   showToast("Administrador activo.");
@@ -721,17 +919,32 @@ function renderAdminDashboard() {
   renderAdminOrders();
   renderAdminProductCards();
   renderAdminStats();
+  renderFinance();
+  renderNotes();
 }
 
 function renderAdminStats() {
   if (!adminOrderCount) return;
-  const pendingOrders = adminOrders.filter((order) => order.status !== "Entregado").length;
-  const ordersTotal = adminOrders
-    .filter((order) => order.status === "Entregado" && !order.saleCleared)
-    .reduce((sum, order) => sum + order.total, 0);
+  const pendingOrders = adminOrders.filter((order) => !["Entregado", "Cancelado"].includes(order.status)).length;
+  const deliveredOrders = adminOrders.filter((order) => order.status === "Entregado" && !order.saleCleared);
+  const canceledOrders = adminOrders.filter((order) => order.status === "Cancelado");
+  const ordersTotal = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
+  const productsSold = deliveredOrders.reduce((sum, order) => {
+    return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+  }, 0);
   adminOrderCount.textContent = pendingOrders;
   adminSalesTotal.textContent = money(ordersTotal);
   adminProductsTotal.textContent = products.length;
+  if (adminCanceledCount) adminCanceledCount.textContent = canceledOrders.length;
+  if (completedOrdersCount) completedOrdersCount.textContent = deliveredOrders.length;
+  if (soldOutCount) soldOutCount.textContent = products.filter((product) => Number(product.stock) <= 0).length;
+  if (posTotal) posTotal.textContent = money(ordersTotal);
+  if (posCount) posCount.textContent = productsSold;
+  if (adminLastUpdate) adminLastUpdate.textContent = `Última actualización: ${new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" })}`;
+  if (miniChart) {
+    const bars = [pendingOrders, deliveredOrders.length, canceledOrders.length, products.filter((product) => Number(product.stock) <= 0).length, Math.max(1, Math.round(ordersTotal / 100))];
+    miniChart.innerHTML = bars.map((bar, index) => `<span style="height:${Math.max(18, Math.min(100, bar * 18))}px" data-bar="${index}"></span>`).join("");
+  }
 }
 
 function switchAdminView(view) {
@@ -753,40 +966,81 @@ function saveWebOrder(order) {
 function renderAdminOrders() {
   if (!adminOrdersElement) return;
 
-  const pendingOrders = adminOrders.filter((order) => order.status !== "Entregado");
-  if (!pendingOrders.length) {
-    adminOrdersElement.innerHTML = '<p class="cart-note">Aun no hay pedidos enviados desde esta pagina.</p>';
-    renderAdminStats();
-    return;
+  const pendingOrders = adminOrders.filter((order) => !["Entregado", "Cancelado"].includes(order.status));
+  const deliveredOrders = adminOrders.filter((order) => order.status === "Entregado");
+  const canceledOrders = adminOrders.filter((order) => order.status === "Cancelado");
+  const schedules = ["2:00 pm", "6:00 pm"];
+
+  if (activeOrderStatusFilter === "delivering") {
+    adminOrdersElement.innerHTML = schedules.map((schedule) => renderScheduleCard(schedule, pendingOrders)).join("");
+  } else if (activeOrderStatusFilter === "delivered") {
+    adminOrdersElement.innerHTML = renderOrderList(deliveredOrders, "No hay pedidos entregados hoy.");
+  } else if (activeOrderStatusFilter === "canceled") {
+    adminOrdersElement.innerHTML = renderOrderList(canceledOrders, "No hay cancelaciones.");
+  } else {
+    adminOrdersElement.innerHTML = `
+      <div class="orders-prep-banner">
+        <strong>Pedidos en preparación</strong>
+        <span>Confirma cada pedido, revisa la ubicación y después entra a Entregando para iniciar ruta.</span>
+      </div>
+      ${renderOrderList(pendingOrders, "No hay pedidos en preparación.")}
+    `;
   }
 
-  const schedules = ["2:00 pm", "6:00 pm"];
-  adminOrdersElement.innerHTML = schedules.map((schedule) => {
-    const orders = pendingOrders.filter((order) => order.schedule === schedule);
-    const total = orders.reduce((sum, order) => sum + order.total, 0);
-    const itemCount = orders.reduce((sum, order) => {
-      return sum + order.items.reduce((itemsSum, item) => itemsSum + item.quantity, 0);
-    }, 0);
-    const isOpen = activeRouteSchedule === schedule;
-
-    return `
-      <article class="schedule-card ${isOpen ? "open" : ""}">
-        <div class="schedule-card-head">
-          <div>
-            <span class="eyebrow">Ruta de reparto</span>
-            <h4>${schedule}</h4>
-            <p>${orders.length} pedido(s) | ${itemCount} producto(s)</p>
-          </div>
-          <strong class="order-total-pill">${money(total)}</strong>
-        </div>
-        <button class="add-button full" type="button" data-open-schedule="${schedule}" ${orders.length ? "" : "disabled"}>
-          ${isOpen ? "Ocultar ruta" : "Entregar horario"}
-        </button>
-        ${isOpen ? renderScheduleDetail(schedule, orders) : ""}
-      </article>
-    `;
-  }).join("");
   renderAdminStats();
+}
+
+function renderScheduleCard(schedule, pendingOrders) {
+  const orders = pendingOrders.filter((order) => order.schedule === schedule);
+  const total = orders.reduce((sum, order) => sum + order.total, 0);
+  const itemCount = orders.reduce((sum, order) => {
+    return sum + order.items.reduce((itemsSum, item) => itemsSum + item.quantity, 0);
+  }, 0);
+  const isOpen = activeRouteSchedule === schedule;
+
+  return `
+    <article class="schedule-card ${isOpen ? "open" : ""}">
+      <div class="schedule-card-head">
+        <div>
+          <span class="eyebrow">Ruta de reparto</span>
+          <h4>${schedule}</h4>
+          <p>${orders.length} pedido(s) | ${itemCount} producto(s)</p>
+        </div>
+        <strong class="order-total-pill">${money(total)}</strong>
+      </div>
+      <button class="add-button full" type="button" data-open-schedule="${schedule}" ${orders.length ? "" : "disabled"}>
+        ${isOpen ? "Ocultar ruta" : "Entregar horario"}
+      </button>
+      ${isOpen ? renderScheduleDetail(schedule, orders) : ""}
+    </article>
+  `;
+}
+
+function renderOrderList(orders, emptyText) {
+  if (!orders.length) return `<p class="empty-admin-state">${emptyText}</p>`;
+
+  return `
+    <div class="orders-table">
+      ${orders.map((order) => `
+        <article class="order-row ${order.status === "Cancelado" ? "canceled" : ""}">
+          <div>
+            <strong>#${order.id}</strong>
+            <span>${order.customer} | ${order.phone || "Sin teléfono"}</span>
+          </div>
+          <div>
+            <small>${order.items.map((item) => `${item.quantity} x ${item.name}`).join(" | ")}</small>
+            <small>${order.address || "Sin dirección"}</small>
+          </div>
+          <b>${money(order.total)}</b>
+          <em>${order.status || "Preparando"}</em>
+          <div class="order-row-actions">
+            ${order.status === "Entregado" ? "" : `<button class="copy-button" type="button" data-route-order="${order.id}">Entrar</button>`}
+            ${order.status === "Cancelado" || order.status === "Entregado" ? "" : `<button class="secondary-action" type="button" data-cancel-order="${order.id}">Cancelar</button>`}
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderScheduleDetail(schedule, orders) {
@@ -1327,6 +1581,20 @@ function markOrderDelivered(id, detected = false) {
   showToast("Pedido entregado y agregado al punto de venta.");
 }
 
+function cancelOrder(id) {
+  adminOrders = adminOrders.map((order) => {
+    if (String(order.id) !== String(id)) return order;
+    updateOrderInFirebase(order.id, {
+      status: "Cancelado",
+      canceledAt: window.firebase?.firestore?.FieldValue?.serverTimestamp?.() || new Date().toISOString()
+    });
+    return { ...order, status: "Cancelado" };
+  });
+  writeStored(ORDERS_KEY, adminOrders);
+  renderAdminDashboard();
+  showToast("Pedido cancelado.");
+}
+
 function markScheduleDelivered(schedule, detected = false) {
   const deliveredAt = new Date().toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
   adminOrders = adminOrders.map((order) => {
@@ -1351,6 +1619,87 @@ function markScheduleDelivered(schedule, detected = false) {
   switchAdminView("pos");
   renderAdminDashboard();
   showToast(`Horario ${schedule} entregado y agregado al punto de venta.`);
+}
+
+function renderFinance() {
+  if (!financeTable) return;
+
+  const delivered = adminOrders.filter((order) => order.status === "Entregado");
+  const canceled = adminOrders.filter((order) => order.status === "Cancelado");
+  const gross = delivered.reduce((sum, order) => sum + order.total, 0);
+  const estimatedProfit = gross * 0.7;
+  const loss = canceled.reduce((sum, order) => sum + (order.total || 0), 0);
+
+  financeTable.innerHTML = `
+    <div class="finance-summary-grid">
+      <div><span>Ganancias totales</span><strong>${money(gross)}</strong></div>
+      <div><span>Ganancia estimada</span><strong>${money(estimatedProfit)}</strong></div>
+      <div><span>Monto perdido por cancelaciones</span><strong>${money(loss)}</strong></div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Periodo</th>
+          <th>Ganancias totales</th>
+          <th>Cancelaciones</th>
+          <th>Monto a pagar</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hoy</td>
+          <td>${money(gross)}</td>
+          <td>${canceled.length}</td>
+          <td>${money(gross)}</td>
+          <td><span class="finance-ok">Ganancias registradas</span></td>
+        </tr>
+        <tr>
+          <td>Historial local</td>
+          <td>${money(gross)}</td>
+          <td>${canceled.length}</td>
+          <td>${money(Math.max(0, gross - loss))}</td>
+          <td><span class="finance-ok">Listo</span></td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderNotes() {
+  if (!notesList) return;
+
+  notesList.innerHTML = adminNotes.map((note) => `
+    <article class="note-card ${note.color || "green"}">
+      <strong>${note.title}</strong>
+      <p>${note.text}</p>
+      <button type="button" data-delete-note="${note.id}" aria-label="Eliminar nota">x</button>
+    </article>
+  `).join("");
+}
+
+function addNote(event) {
+  event.preventDefault();
+  const title = noteTitle.value.trim();
+  const text = noteText.value.trim();
+  if (!title || !text) {
+    showToast("Escribe título y nota.");
+    return;
+  }
+
+  const colors = ["green", "blue", "pink"];
+  adminNotes = [{ id: Date.now(), title, text, color: colors[adminNotes.length % colors.length] }, ...adminNotes];
+  writeStored(NOTES_KEY, adminNotes);
+  noteTitle.value = "";
+  noteText.value = "";
+  renderNotes();
+  showToast("Nota guardada.");
+}
+
+function deleteNote(id) {
+  adminNotes = adminNotes.filter((note) => String(note.id) !== String(id));
+  writeStored(NOTES_KEY, adminNotes);
+  renderNotes();
 }
 
 function checkDeliveryArrival(id) {
@@ -1953,6 +2302,21 @@ document.querySelector("#adminTabs").addEventListener("click", (event) => {
   const button = event.target.closest("[data-admin-view]");
   if (button) switchAdminView(button.dataset.adminView);
 });
+document.querySelectorAll("[data-order-status-filter]").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll("[data-order-status-filter]").forEach((item) => item.classList.remove("active"));
+    button.classList.add("active");
+    activeOrderStatusFilter = button.dataset.orderStatusFilter;
+    renderAdminOrders();
+  });
+});
+if (noteForm) noteForm.addEventListener("submit", addNote);
+if (notesList) {
+  notesList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-delete-note]");
+    if (button) deleteNote(button.dataset.deleteNote);
+  });
+}
 adminPassword.addEventListener("keydown", (event) => {
   if (event.key === "Enter") loginAdmin();
 });
@@ -1965,6 +2329,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   const routeButton = event.target.closest("[data-route-order]");
   const arrivedButton = event.target.closest("[data-arrived-order]");
   const deliverButton = event.target.closest("[data-deliver-order]");
+  const cancelButton = event.target.closest("[data-cancel-order]");
   const routeViewButton = event.target.closest("[data-route-view]");
   const routeFullscreenButton = event.target.closest("[data-route-fullscreen]");
 
@@ -1986,6 +2351,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   if (routeButton) openDeliveryRoute(routeButton.dataset.routeOrder);
   if (arrivedButton) checkDeliveryArrival(arrivedButton.dataset.arrivedOrder);
   if (deliverButton) markOrderDelivered(deliverButton.dataset.deliverOrder);
+  if (cancelButton) cancelOrder(cancelButton.dataset.cancelOrder);
   if (routeViewButton) setRouteViewMode(routeViewButton.dataset.routeView);
   if (routeFullscreenButton) toggleRouteFullscreen();
 });
