@@ -3506,6 +3506,183 @@ body.map-fullscreen-open {
   font-size: clamp(30px, 4.2vw, 54px);
 }
 
+.product-admin-grid {
+  grid-template-columns: 1fr;
+}
+
+.admin-product-list {
+  width: 100%;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+}
+
+.admin-product-category {
+  margin-bottom: 22px;
+  overflow: visible;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(10, 24, 40, .04);
+}
+
+.admin-product-category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #f7f8fa;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.admin-product-category-head strong {
+  color: #080b10;
+  font-size: 20px;
+}
+
+.admin-product-category-head span {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  color: white;
+  font-weight: 900;
+  background: #ff5a1f;
+  border-radius: 999px;
+}
+
+.admin-product-card {
+  grid-template-columns: 76px minmax(0, 1fr) 220px;
+  gap: 18px;
+  min-height: 108px;
+  padding: 18px 20px;
+}
+
+.admin-product-card h4 {
+  font-size: 18px;
+}
+
+.admin-product-card p {
+  max-width: 760px;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.product-editor {
+  position: fixed;
+  inset: 82px 32px 32px 108px;
+  z-index: 8500;
+  grid-column: auto;
+  max-height: calc(100vh - 114px);
+  overflow: auto;
+  border-radius: 20px;
+  box-shadow: 0 26px 80px rgba(8, 11, 16, .24);
+}
+
+.product-editor::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background: rgba(8, 11, 16, .28);
+  backdrop-filter: blur(6px);
+}
+
+.finance-table table {
+  overflow: visible;
+}
+
+.finance-action-wrap {
+  position: relative;
+}
+
+.finance-more-button {
+  min-height: 38px;
+  padding: 0 12px;
+  color: #ff5a1f;
+  font-weight: 900;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.finance-action-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
+  display: grid;
+  min-width: 230px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #edf0f3;
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(10, 24, 40, .16);
+}
+
+.finance-action-menu[hidden],
+.finance-breakdown-row[hidden] {
+  display: none;
+}
+
+.finance-action-menu button {
+  padding: 14px 12px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #edf0f3;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.finance-action-menu button:last-child {
+  border-bottom: 0;
+}
+
+.finance-breakdown {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 28px;
+  padding: 18px 0;
+  background: white;
+}
+
+.finance-breakdown h4 {
+  margin: 0 0 12px;
+}
+
+.finance-breakdown > div {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.finance-breakdown > div:first-child {
+  color: #4b5563;
+}
+
+.finance-breakdown > div:first-child strong {
+  color: #080b10;
+  font-size: 30px;
+}
+
+.finance-breakdown p {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0;
+  padding: 18px 0;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.finance-breakdown p span,
+.finance-breakdown p strong {
+  color: #080b10;
+  font-size: 18px;
+  font-weight: 900;
+}
+
 @media (max-width: 760px) {
   .confirm-detail-grid,
   .product-type-grid {
@@ -3549,5 +3726,39 @@ body.map-fullscreen-open {
   .route-steps-card {
     width: min(86%, 360px);
     min-height: 92px;
+  }
+
+  .product-editor {
+    inset: 76px 10px 10px;
+    max-height: calc(100vh - 86px);
+    padding: 18px;
+  }
+
+  .admin-product-card {
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .admin-product-actions {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+
+  .product-price-label {
+    grid-column: 1 / -1;
+  }
+
+  .finance-table {
+    padding: 12px;
+  }
+
+  .finance-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-action-menu {
+    left: auto;
+    right: 0;
   }
 }

@@ -439,29 +439,25 @@
                       <span>Grupo modificador</span>
                       <span>Reglas de precios y ventas</span>
                     </div>
-                    <div class="product-type-grid">
-                      <label class="product-type-option active">
-                        <input type="radio" checked>
-                        <strong>Producto individual</strong>
-                        <span>Productos vendidos individualmente en tu tienda.</span>
-                      </label>
-                      <label class="product-type-option">
-                        <input type="radio">
-                        <strong>Combo</strong>
-                        <span>Productos vendidos juntos como paquete o promoción.</span>
-                      </label>
-                    </div>
                     <label for="editProduct">Producto</label>
                     <select id="editProduct"></select>
-                    <button class="secondary-action" id="newProductButton" type="button">Nuevo producto</button>
                     <label for="editProductCategory">Categoria</label>
-                    <input id="editProductCategory" type="text" placeholder="pollo, pescado, fruta...">
+                    <select id="editProductCategory">
+                      <option value="frutas congeladas">Frutas congeladas</option>
+                      <option value="papas y verduras">Papas y verduras</option>
+                      <option value="empanizados">Empanizados</option>
+                      <option value="mariscos">De mar</option>
+                      <option value="pescados">Pescados</option>
+                      <option value="aves">Aves</option>
+                      <option value="carnes">Carnes</option>
+                      <option value="agotados">Agotados</option>
+                      <option value="general">General</option>
+                    </select>
                     <label for="editProductName">Nombre</label>
                     <input id="editProductName" type="text">
                     <label for="editProductPrice">Precio</label>
                     <input id="editProductPrice" type="number" min="0">
-                    <label for="editProductStock">Inventario disponible</label>
-                    <input id="editProductStock" type="number" min="0" placeholder="0 = agotado">
+                    <input id="editProductStock" type="hidden" value="999">
                     <label for="editProductPresentation">Presentacion</label>
                     <input id="editProductPresentation" type="text">
                     <label for="editProductImage">Imagen</label>

@@ -491,7 +491,8 @@ function subscribeFirebaseProducts() {
           stock: Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999,
           presentation: product.presentation || "1 pieza",
           image: product.image || "assets/logo-naturfreeze-mark.jpg",
-          detail: product.detail || "Producto NaturFreeze."
+          detail: product.detail || "Producto NaturFreeze.",
+          hidden: Boolean(product.hidden)
         });
       });
 
@@ -1056,6 +1057,7 @@ function renderOrderList(orders, emptyText) {
           <div class="order-row-actions">
             ${(!order.status || order.status === "Pendiente") ? `<button class="copy-button" type="button" data-confirm-order="${order.id}">Confirmar</button>` : ""}
             ${order.status === "Confirmado" ? `<button class="copy-button" type="button" data-route-order="${order.id}">Entrar</button>` : ""}
+            ${order.status === "Entregado" ? `<button class="copy-button" type="button" data-print-ticket="${order.id}">Ticket</button>` : ""}
             ${order.status === "Cancelado" || order.status === "Entregado" ? "" : `<button class="secondary-action" type="button" data-cancel-order="${order.id}">Cancelar</button>`}
           </div>
         </article>
@@ -1701,12 +1703,14 @@ function renderFinance() {
   if (!financeTable) return;
 
   const period = financePeriod?.value || "day";
-  const label = period === "month" ? "mes" : period === "week" ? "semana" : "día";
   const delivered = adminOrders.filter((order) => order.status === "Entregado" && isOrderInPeriod(order, period));
   const canceled = adminOrders.filter((order) => order.status === "Cancelado" && isOrderInPeriod(order, period));
-  const gross = delivered.reduce((sum, order) => sum + order.total, 0);
-  const estimatedProfit = gross * 0.7;
-  const loss = canceled.reduce((sum, order) => sum + (order.total || 0), 0);
+  const financeRows = buildFinanceRows(delivered, period);
+  const gross = financeRows.reduce((sum, row) => sum + row.total, 0);
+  const subtotal = financeRows.reduce((sum, row) => sum + row.subtotal, 0);
+  const shippingTotal = financeRows.reduce((sum, row) => sum + row.shipping, 0);
+  const canceledTotal = canceled.reduce((sum, order) => sum + (order.total || 0), 0);
+  const label = getFinancePeriodLabel(period);
 
   financeTable.innerHTML = `
     <div class="finance-ticket">
@@ -1717,40 +1721,127 @@ function renderFinance() {
       <p>${new Date().toLocaleString("es-MX", { dateStyle: "full", timeStyle: "short" })}</p>
     </div>
     <div class="finance-summary-grid">
+      <div><span>Ganancias subtotales</span><strong>${money(subtotal)}</strong></div>
+      <div><span>Ganancias de envío</span><strong>${money(shippingTotal)}</strong></div>
       <div><span>Ganancias totales</span><strong>${money(gross)}</strong></div>
-      <div><span>Ganancia estimada</span><strong>${money(estimatedProfit)}</strong></div>
-      <div><span>Monto perdido por cancelaciones</span><strong>${money(loss)}</strong></div>
     </div>
     <table>
       <thead>
         <tr>
-          <th>Periodo</th>
+          <th>Fecha de facturación por ${label}</th>
+          <th>Ganancias subtotales</th>
+          <th>Ganancias de envío</th>
           <th>Ganancias totales</th>
-          <th>Cancelaciones</th>
-          <th>Monto a pagar</th>
           <th>Estado</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>${label.charAt(0).toUpperCase() + label.slice(1)} actual</td>
-          <td>${money(gross)}</td>
-          <td>${canceled.length}</td>
-          <td>${money(gross)}</td>
-          <td><span class="finance-ok">Ganancias registradas</span></td>
-        </tr>
-        ${delivered.map((order) => `
-          <tr>
-            <td>Ticket #${order.id}</td>
-            <td>${money(order.total || 0)}</td>
-            <td>0</td>
-            <td>${money(order.total || 0)}</td>
-            <td><span class="finance-ok">Entregado</span></td>
+        ${financeRows.map((row) => `
+          <tr class="finance-main-row">
+            <td>${row.label}</td>
+            <td>${money(row.subtotal)}</td>
+            <td>${money(row.shipping)}</td>
+            <td>${money(row.total)}</td>
+            <td><span class="finance-ok">${row.paid ? "Pagado" : "Por pagar"}</span></td>
+            <td>
+              <div class="finance-action-wrap">
+                <button class="finance-more-button" type="button" data-finance-more="${row.id}">ver más</button>
+                <div class="finance-action-menu" id="financeMenu-${row.id}" hidden>
+                  <button type="button" data-finance-breakdown="${row.id}">Detalles de desglose</button>
+                  <button type="button" data-finance-print="${row.id}">Imprimir ticket</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="finance-breakdown-row" id="financeBreakdown-${row.id}" hidden>
+            <td colspan="6">
+              <div class="finance-breakdown">
+                <div>
+                  <h4>Ganancias totales</h4>
+                  <strong>${money(row.total)}</strong>
+                  <span>${row.paid ? "Pagado" : "Por pagar"}</span>
+                  <p>Periodo de facturación<br>${row.label}</p>
+                </div>
+                <div>
+                  <h4>Detalles de la tarifa</h4>
+                  <p><span>Precio total del producto sin promoción</span><strong>${money(row.subtotal)}</strong></p>
+                  <p><span>Costo de promoción</span><strong>${money(0)}</strong></p>
+                  <p><span>Envío</span><strong>${money(row.shipping)}</strong></p>
+                  <p><span>Monto total recibido</span><strong>${money(row.total)}</strong></p>
+                </div>
+              </div>
+            </td>
           </tr>
         `).join("")}
+        ${financeRows.length ? "" : `<tr><td colspan="6">No hay ventas entregadas en este ${label}.</td></tr>`}
       </tbody>
     </table>
+    <small>Cancelaciones en este periodo: ${canceled.length} | Monto cancelado: ${money(canceledTotal)}</small>
   `;
+}
+
+function getFinancePeriodLabel(period) {
+  if (period === "month") return "mes";
+  if (period === "week") return "semana";
+  return "día";
+}
+
+function buildFinanceRows(orders, period) {
+  const groups = new Map();
+  orders.forEach((order) => {
+    const date = parseOrderDate(order);
+    const key = getFinanceGroupKey(date, period);
+    const label = getFinanceGroupLabel(date, period);
+    const subtotal = Number(order.subtotal) || Math.max(0, Number(order.total || 0) - Number(order.shipping || 0));
+    const shippingAmount = Number(order.shipping) || 0;
+    const current = groups.get(key) || {
+      id: key.replace(/[^a-z0-9]/gi, "-"),
+      label,
+      subtotal: 0,
+      shipping: 0,
+      total: 0,
+      paid: true,
+      orders: []
+    };
+    current.subtotal += subtotal;
+    current.shipping += shippingAmount;
+    current.total += Number(order.total) || subtotal + shippingAmount;
+    current.orders.push(order);
+    groups.set(key, current);
+  });
+  return Array.from(groups.values()).sort((a, b) => b.id.localeCompare(a.id));
+}
+
+function getFinanceGroupKey(date, period) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  if (period === "month") return `${year}-${month}`;
+  if (period === "week") {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const weekday = start.getDay() || 7;
+    start.setDate(start.getDate() - weekday + 1);
+    return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+  }
+  return `${year}-${month}-${day}`;
+}
+
+function getFinanceGroupLabel(date, period) {
+  if (period === "month") {
+    return date.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+  }
+  if (period === "week") {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const weekday = start.getDay() || 7;
+    start.setDate(start.getDate() - weekday + 1);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return `${start.toLocaleDateString("es-MX")} - ${end.toLocaleDateString("es-MX")}`;
+  }
+  return date.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function parseOrderDate(order) {
@@ -1790,12 +1881,19 @@ function printHtml(title, html) {
       <head>
         <title>${title}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+          body { font-family: Arial, sans-serif; margin: 26px; color: #1f2933; }
           h1, h2, h3 { margin: 0 0 12px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          .print-head { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+          .brand { font-size: 28px; font-weight: 900; color: #05386b; }
+          .muted { color: #64748b; font-size: 12px; font-weight: 700; }
+          .box { display: grid; gap: 4px; margin: 12px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+          th { background: #dedede; }
           th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
           ul { padding-left: 18px; }
-          .total { margin-top: 18px; font-size: 22px; font-weight: 800; }
+          .totals { width: 260px; margin-left: auto; margin-top: 18px; }
+          .totals div { display: flex; justify-content: space-between; padding: 7px 0; }
+          .total { font-size: 22px; font-weight: 900; border-top: 2px solid #111; }
         </style>
       </head>
       <body>${html}</body>
@@ -1810,20 +1908,111 @@ function printTicket(id) {
   const order = adminOrders.find((item) => String(item.id) === String(id));
   if (!order) return;
   printHtml(`Ticket ${order.id}`, `
-    <h2>NaturFreeze Cancún</h2>
-    <p>Ticket #${order.id}</p>
-    <p>${order.deliveredAt || order.date || ""}</p>
-    <p><strong>Cliente:</strong> ${order.customer || ""}</p>
-    <p><strong>Teléfono:</strong> ${order.phone || ""}</p>
-    <p><strong>Pago:</strong> ${order.payment || ""}</p>
-    <ul>${order.items.map((item) => `<li>${item.quantity} x ${item.name} - ${money(item.subtotal || 0)}</li>`).join("")}</ul>
-    <div class="total">Total: ${money(order.total || 0)}</div>
+    ${renderPrintableTicket(order, false)}
   `);
 }
 
 function printFinanceSummary() {
-  if (!financeTable) return;
-  printHtml("Resumen financiero NaturFreeze", `<h2>Resumen financiero</h2>${financeTable.innerHTML}`);
+  const period = financePeriod?.value || "day";
+  const rows = buildFinanceRows(adminOrders.filter((order) => order.status === "Entregado" && isOrderInPeriod(order, period)), period);
+  printHtml("Resumen financiero NaturFreeze", renderPrintableFinance(rows, getFinancePeriodLabel(period)));
+}
+
+function printFinanceRow(rowId) {
+  const period = financePeriod?.value || "day";
+  const rows = buildFinanceRows(adminOrders.filter((order) => order.status === "Entregado" && isOrderInPeriod(order, period)), period);
+  const row = rows.find((item) => item.id === rowId);
+  if (!row) return;
+  printHtml(`Orden de venta ${row.label}`, renderPrintableFinance([row], getFinancePeriodLabel(period)));
+}
+
+function renderPrintableFinance(rows, label) {
+  const subtotal = rows.reduce((sum, row) => sum + row.subtotal, 0);
+  const shippingAmount = rows.reduce((sum, row) => sum + row.shipping, 0);
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+  const allOrders = rows.flatMap((row) => row.orders);
+  return `
+    <div class="print-head">
+      <div>
+        <div class="brand">NATURFREEZE</div>
+        <div class="muted">Cancún, Quintana Roo, México</div>
+        <div class="muted">Productos congelados de alta calidad</div>
+      </div>
+      <div>
+        <h2>Orden de Venta</h2>
+        <strong>#NF${Date.now().toString().slice(-6)}</strong>
+        <div class="muted">${new Date().toLocaleDateString("es-MX")}</div>
+      </div>
+    </div>
+    <div class="box">
+      <strong>Periodo de facturación por ${label}</strong>
+      <span>${rows.map((row) => row.label).join(" | ") || "Sin ventas"}</span>
+      <span>Método: efectivo o transferencia</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Cantidad</th>
+          <th>Artículo</th>
+          <th>Precio unitario</th>
+          <th>Envío</th>
+          <th>Importe bruto</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allOrders.flatMap((order) => order.items.map((item) => `
+          <tr>
+            <td>${item.quantity}</td>
+            <td>${item.name}</td>
+            <td>${money((item.subtotal || 0) / Math.max(1, item.quantity || 1))}</td>
+            <td>${money(order.shipping || 0)}</td>
+            <td>${money(item.subtotal || 0)}</td>
+          </tr>
+        `)).join("") || `<tr><td colspan="5">Sin ventas</td></tr>`}
+      </tbody>
+    </table>
+    <div class="totals">
+      <div><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
+      <div><span>Envío</span><strong>${money(shippingAmount)}</strong></div>
+      <div><span>Impuesto</span><strong>${money(0)}</strong></div>
+      <div class="total"><span>Total</span><strong>${money(total)}</strong></div>
+    </div>
+  `;
+}
+
+function renderPrintableTicket(order, full = true) {
+  return `
+    <div class="print-head">
+      <div>
+        <div class="brand">NATURFREEZE</div>
+        <div class="muted">Cancún, Quintana Roo</div>
+      </div>
+      <div>
+        <h2>${full ? "Orden de Venta" : "Ticket"}</h2>
+        <strong>#${order.id}</strong>
+        <div class="muted">${order.deliveredAt || order.date || ""}</div>
+      </div>
+    </div>
+    <p><strong>Cliente:</strong> ${order.customer || ""}</p>
+    <p><strong>Teléfono:</strong> ${order.phone || ""}</p>
+    <p><strong>Método de pago:</strong> ${order.payment || ""}</p>
+    <table>
+      <thead><tr><th>Cantidad</th><th>Artículo</th><th>Precio</th><th>Importe</th></tr></thead>
+      <tbody>${order.items.map((item) => `
+        <tr>
+          <td>${item.quantity}</td>
+          <td>${item.name}</td>
+          <td>${money((item.subtotal || 0) / Math.max(1, item.quantity || 1))}</td>
+          <td>${money(item.subtotal || 0)}</td>
+        </tr>
+      `).join("")}</tbody>
+    </table>
+    <div class="totals">
+      <div><span>Subtotal</span><strong>${money(order.subtotal || 0)}</strong></div>
+      <div><span>Envío</span><strong>${money(order.shipping || 0)}</strong></div>
+      <div class="total"><span>Total</span><strong>${money(order.total || 0)}</strong></div>
+    </div>
+  `;
 }
 
 function renderNotes() {
@@ -1972,6 +2161,7 @@ function saveProductEdit() {
     renderProducts();
     renderCart();
     renderAdminDashboard();
+    closeProductEditorPanel();
     showToast("Producto nuevo agregado.");
     return;
   }
@@ -1990,6 +2180,7 @@ function saveProductEdit() {
   renderProducts();
   renderCart();
   renderAdminDashboard();
+  closeProductEditorPanel();
   showToast("Producto actualizado en esta pagina.");
 }
 
@@ -2016,12 +2207,39 @@ function previewUploadedProductImage(file) {
 function renderAdminProductCards() {
   if (!adminProductCards) return;
 
-  adminProductCards.innerHTML = products.filter((product) => !product.hidden).map((product) => `
+  const categoryOrder = [
+    "frutas congeladas",
+    "papas y verduras",
+    "empanizados",
+    "mariscos",
+    "pescados",
+    "aves",
+    "carnes",
+    "agotados",
+    "general"
+  ];
+  const visibleProducts = products.filter((product) => !product.hidden);
+  const extraCategories = [...new Set(visibleProducts.map((product) => product.category))]
+    .filter((category) => !categoryOrder.includes(category));
+  const groupedProducts = [...categoryOrder, ...extraCategories]
+    .map((category) => ({
+      category,
+      products: visibleProducts.filter((product) => product.category === category)
+    }))
+    .filter((group) => group.products.length);
+
+  adminProductCards.innerHTML = groupedProducts.map((group) => `
+    <section class="admin-product-category">
+      <div class="admin-product-category-head">
+        <strong>${getCategoryLabel(group.category)}</strong>
+        <span>${group.products.length}</span>
+      </div>
+      ${group.products.map((product) => `
     <article class="admin-product-card ${Number(product.stock) <= 0 ? "sold-out" : ""}">
       <img src="${product.image}" alt="${product.name}">
       <div>
         <h4>${product.name}</h4>
-        <p>${product.presentation} | ${product.category} | Inventario: ${Number.isFinite(Number(product.stock)) ? Number(product.stock) : 999}</p>
+        <p>${product.presentation} | ${getCategoryLabel(product.category)}</p>
         <p>${product.detail}</p>
       </div>
       <div class="admin-product-actions">
@@ -2037,7 +2255,24 @@ function renderAdminProductCards() {
         </div>
       </div>
     </article>
+      `).join("")}
+    </section>
   `).join("");
+}
+
+function getCategoryLabel(category) {
+  const labels = {
+    "frutas congeladas": "Frutas congeladas",
+    "papas y verduras": "Papas y verduras",
+    empanizados: "Empanizados",
+    mariscos: "De mar",
+    pescados: "Pescados",
+    aves: "Aves",
+    carnes: "Carnes",
+    agotados: "Agotados",
+    general: "General"
+  };
+  return labels[category] || category || "General";
 }
 
 function openProductEditor(id) {
@@ -2499,7 +2734,8 @@ document.querySelector("#clearPos").addEventListener("click", clearPosSale);
 document.querySelector("#clearOrders").addEventListener("click", clearWebOrders);
 document.querySelector("#saveProductEdit").addEventListener("click", saveProductEdit);
 document.querySelector("#resetProductEdits").addEventListener("click", resetProductEdits);
-document.querySelector("#newProductButton").addEventListener("click", startNewProduct);
+const newProductButton = document.querySelector("#newProductButton");
+if (newProductButton) newProductButton.addEventListener("click", startNewProduct);
 const newProductHeaderButton = document.querySelector("#newProductHeaderButton");
 if (newProductHeaderButton) newProductHeaderButton.addEventListener("click", () => {
   startNewProduct();
@@ -2525,6 +2761,27 @@ if (cancelOrderFromModal) {
 }
 if (financePeriod) financePeriod.addEventListener("change", renderFinance);
 if (printFinance) printFinance.addEventListener("click", printFinanceSummary);
+if (financeTable) {
+  financeTable.addEventListener("click", (event) => {
+    const moreButton = event.target.closest("[data-finance-more]");
+    const breakdownButton = event.target.closest("[data-finance-breakdown]");
+    const financePrintButton = event.target.closest("[data-finance-print]");
+
+    if (moreButton) {
+      const menu = document.querySelector(`#financeMenu-${CSS.escape(moreButton.dataset.financeMore)}`);
+      document.querySelectorAll(".finance-action-menu").forEach((item) => {
+        if (item !== menu) item.hidden = true;
+      });
+      if (menu) menu.hidden = !menu.hidden;
+    }
+    if (breakdownButton) {
+      const detail = document.querySelector(`#financeBreakdown-${CSS.escape(breakdownButton.dataset.financeBreakdown)}`);
+      if (detail) detail.hidden = !detail.hidden;
+      document.querySelectorAll(".finance-action-menu").forEach((item) => item.hidden = true);
+    }
+    if (financePrintButton) printFinanceRow(financePrintButton.dataset.financePrint);
+  });
+}
 if (posLines) {
   posLines.addEventListener("click", (event) => {
     const printButton = event.target.closest("[data-print-ticket]");
@@ -2581,6 +2838,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   const arrivedButton = event.target.closest("[data-arrived-order]");
   const deliverButton = event.target.closest("[data-deliver-order]");
   const cancelButton = event.target.closest("[data-cancel-order]");
+  const printTicketButton = event.target.closest("[data-print-ticket]");
   const routeViewButton = event.target.closest("[data-route-view]");
   const routeFullscreenButton = event.target.closest("[data-route-fullscreen]");
 
@@ -2604,6 +2862,7 @@ adminOrdersElement.addEventListener("click", (event) => {
   if (arrivedButton) checkDeliveryArrival(arrivedButton.dataset.arrivedOrder);
   if (deliverButton) markOrderDelivered(deliverButton.dataset.deliverOrder);
   if (cancelButton) cancelOrder(cancelButton.dataset.cancelOrder);
+  if (printTicketButton) printTicket(printTicketButton.dataset.printTicket);
   if (routeViewButton) setRouteViewMode(routeViewButton.dataset.routeView);
   if (routeFullscreenButton) toggleRouteFullscreen();
 });
